@@ -60,13 +60,13 @@ export default async function ProfilePage() {
 
           {/* 우측 영역: 갤러리를 원래대로 다시 우측으로 */}
           <div style={{ flex: '2 1 500px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
-            
+
             {/* 핀터레스트 스타일 서재 갤러리 */}
             <div>
               <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '20px' }}>
                 📚 내 서재 갤러리 ({userBooks?.length || 0}권)
               </h2>
-              
+
               {userBooks && userBooks.length > 0 ? (
                 <div style={{
                   columnCount: 'auto',
@@ -76,12 +76,12 @@ export default async function ProfilePage() {
                   {userBooks.map((item: any) => {
                     const book = item.books;
                     if (!book) return null;
-                    
+
                     return (
-                      <div 
-                        key={item.id} 
-                        style={{ 
-                          breakInside: 'avoid', 
+                      <div
+                        key={item.id}
+                        style={{
+                          breakInside: 'avoid',
                           marginBottom: '16px',
                           position: 'relative',
                           borderRadius: 'var(--radius-md)',
@@ -92,17 +92,17 @@ export default async function ProfilePage() {
                         }}
                         className="book-gallery-item focus-ring"
                       >
-                        <img 
-                          src={book.cover_url} 
-                          alt={book.title} 
-                          style={{ 
-                            width: '100%', 
+                        <img
+                          src={book.cover_url}
+                          alt={book.title}
+                          style={{
+                            width: '100%',
                             display: 'block',
                             objectFit: 'cover'
-                          }} 
+                          }}
                         />
                         {/* 호버 오버레이 */}
-                        <div 
+                        <div
                           style={{
                             position: 'absolute',
                             bottom: 0,
@@ -118,9 +118,9 @@ export default async function ProfilePage() {
                             {book.title}
                           </h3>
                           <p style={{ fontSize: '11px', marginTop: '4px', opacity: 0.8 }}>
-                            {item.status === 'READING' ? '📖 읽는 중' : 
-                             item.status === 'COMPLETED' ? '✅ 완독' : 
-                             item.status === 'WANT_TO_READ' ? '❤️ 읽고 싶음' : '보류'}
+                            {item.status === 'READING' ? '📖 읽는 중' :
+                              item.status === 'COMPLETED' ? '✅ 완독' :
+                                item.status === 'WANT_TO_READ' ? '❤️ 읽고 싶음' : '보류'}
                           </p>
                         </div>
                       </div>

@@ -35,7 +35,7 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // 보호 라우트: 미인증 시 로그인 페이지로 리디렉션
-  const protectedPaths = ['/dashboard', '/book', '/settings'];
+  const protectedPaths = ['/dashboard', '/profile', '/book', '/settings'];
   const isProtected = protectedPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path)
   );

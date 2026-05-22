@@ -8,7 +8,7 @@ const TABS = [
   { href: '/dashboard', label: '서재', icon: '🏠' },
   { href: '/dashboard/explore', label: '탐색', icon: '📚' },
   { href: '/dashboard/graph', label: '그래프', icon: '🧠' },
-  { href: '/dashboard/profile', label: '프로필', icon: '👤' },
+  { href: '/profile', label: '프로필', icon: '👤' },
 ];
 
 export default function BottomNavigation() {

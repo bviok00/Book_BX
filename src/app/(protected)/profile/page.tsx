@@ -96,7 +96,7 @@ export default async function ProfilePage() {
   const dominantColor = recentBookWithColor?.dominant_color || '#e8375a';
 
   return (
-    <DashboardShell user={user} profile={profile}>
+    <DashboardShell user={user} profile={profile} folders={folders || []}>
       {/* 백그라운드 블러 효과 (몰입감 극대화) */}
       <div 
         style={{

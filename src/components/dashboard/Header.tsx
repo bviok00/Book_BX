@@ -96,7 +96,7 @@ export default function Header({ user, profile }: HeaderProps) {
           {/* 프로필 아바타 (클릭 시 프로필 화면 이동) */}
           <div style={{ position: 'relative' }}>
             <button
-              onClick={() => router.push('/profile')}
+              onClick={() => window.location.href = '/profile'}
               className="focus-ring"
               title="프로필 설정"
               style={{

@@ -1,0 +1,136 @@
+'use client';
+// ZONE 1: 헤더 — 로고 + 검색바 + 연간 목표 게이지 + 테마 토글 + 프로필
+
+import type { Profile } from '@/types';
+import type { User } from '@supabase/supabase-js';
+import { SearchInput } from '@/components/ui/Input';
+import ThemeToggle from '@/components/ui/ThemeToggle';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import BookSearch from '@/components/library/BookSearch';
+
+interface HeaderProps {
+  user: User;
+  profile: Profile | null;
+}
+
+export default function Header({ user, profile }: HeaderProps) {
+  const router = useRouter();
+  const yearlyGoal = profile?.yearly_goal || 0;
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  return (
+    <>
+      <header
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 24px',
+          height: 'var(--header-height)',
+          borderBottom: '1px solid var(--border-subtle)',
+          backgroundColor: 'var(--bg-card)',
+          gap: '16px',
+        }}
+      >
+        {/* 좌측: 로고 */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            flexShrink: 0,
+            cursor: 'pointer'
+          }}
+          onClick={() => router.push('/dashboard')}
+        >
+          <span style={{ fontSize: '24px' }}>📚</span>
+          <span
+            style={{
+              fontSize: '16px',
+              fontWeight: 700,
+              color: 'var(--text-primary)',
+              letterSpacing: '-0.5px',
+            }}
+          >
+            Intellect BX
+          </span>
+        </div>
+
+        {/* 중앙: 검색바 (클릭 시 모달 오픈) */}
+        <div style={{ flex: 1, maxWidth: '480px' }} onClick={() => setIsSearchOpen(true)}>
+          <SearchInput
+            placeholder="도서 검색..."
+            style={{ width: '100%', cursor: 'pointer' }}
+            readOnly
+          />
+        </div>
+
+        {/* 우측: 연간 목표 + 테마 + 프로필 */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px',
+            flexShrink: 0,
+          }}
+        >
+          {/* 연간 목표 게이지 (간략 표시) */}
+          {yearlyGoal > 0 && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '13px',
+                color: 'var(--text-secondary)',
+              }}
+            >
+              <span>🎯</span>
+              <span>0/{yearlyGoal}권</span>
+            </div>
+          )}
+
+          <ThemeToggle />
+
+          {/* 프로필 아바타 (클릭 시 프로필 화면 이동) */}
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => router.push('/profile')}
+              className="focus-ring"
+              title="프로필 설정"
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                overflow: 'hidden',
+                border: '2px solid var(--border-primary)',
+                cursor: 'pointer',
+                backgroundColor: 'var(--accent)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#fff',
+                fontSize: '14px',
+                fontWeight: 600,
+              }}
+            >
+              {profile?.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt="프로필"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                (profile?.display_name?.[0] || user.email?.[0] || '?').toUpperCase()
+              )}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* 도서 검색 모달 */}
+      <BookSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+    </>
+  );
+}

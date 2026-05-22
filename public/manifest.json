@@ -1,0 +1,16 @@
+{
+  "name": "Intellect BX",
+  "short_name": "Book_BX",
+  "description": "지식 관제탑: 도서 검색, 계층형 독서 노트, 인터랙티브 지식 그래프를 통한 Second Brain 플랫폼",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ]
+}

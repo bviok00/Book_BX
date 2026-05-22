@@ -1,0 +1,298 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+/* ============================================================
+   Intellect_BX — Two-Face Design Token System
+   Light = Notion 오프화이트 연구실 / Dark = Watcha 시네마틱 영화관
+   ============================================================ */
+
+/* ── Google Fonts ── */
+
+
+/* ── CSS Custom Properties: Light Theme (기본값) ── */
+:root {
+  /* 배경 */
+  --bg-primary: #f7f7f5;
+  --bg-secondary: #efeeeb;
+  --bg-card: #ffffff;
+  --bg-card-hover: #fafaf8;
+  --bg-overlay: rgba(247, 247, 245, 0.85);
+
+  /* 텍스트 */
+  --text-primary: #1a1a1a;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --text-inverse: #ffffff;
+
+  /* 테두리 */
+  --border-primary: #e5e5e5;
+  --border-secondary: #d4d4d4;
+  --border-subtle: #f0f0f0;
+
+  /* 액센트 — 책 표지 dominant color로 동적 교체 가능 */
+  --accent: #6366f1;
+  --accent-hover: #4f46e5;
+  --accent-light: rgba(99, 102, 241, 0.1);
+  --accent-glow: rgba(99, 102, 241, 0.2);
+
+  /* 상태 색상 */
+  --status-want: #8b5cf6;
+  --status-reading: #3b82f6;
+  --status-completed: #10b981;
+  --status-dropped: #6b7280;
+
+  /* 그림자 */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08);
+
+  /* 레이아웃 */
+  --sidebar-width: 260px;
+  --right-panel-width: 300px;
+  --header-height: 64px;
+
+  /* 전환 */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-slow: 400ms ease;
+
+  /* 반경 */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+}
+
+/* ── Dark Theme: Watcha 시네마틱 영화관 ── */
+[data-theme="dark"] {
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #111111;
+  --bg-card: #1a1a1a;
+  --bg-card-hover: #222222;
+  --bg-overlay: rgba(10, 10, 10, 0.9);
+
+  --text-primary: #f5f5f5;
+  --text-secondary: #a0a0a0;
+  --text-tertiary: #6b6b6b;
+  --text-inverse: #0a0a0a;
+
+  --border-primary: #2a2a2a;
+  --border-secondary: #333333;
+  --border-subtle: #1f1f1f;
+
+  --accent: #e8375a;
+  --accent-hover: #d42e4f;
+  --accent-light: rgba(232, 55, 90, 0.12);
+  --accent-glow: rgba(232, 55, 90, 0.25);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.5);
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* ============================================================
+   글로벌 베이스 스타일
+   ============================================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color var(--transition-fast),
+              color var(--transition-fast);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ── 150ms 테마 전환 (PRD 요구사항) ── */
+*,
+*::before,
+*::after {
+  transition: background-color var(--transition-fast),
+              border-color var(--transition-fast),
+              color var(--transition-fast),
+              box-shadow var(--transition-fast);
+}
+
+/* ── 커스텀 스크롤바 ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-secondary);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+/* ============================================================
+   유틸리티 클래스
+   ============================================================ */
+
+/* ── 글래스모피즘 ── */
+.glass {
+  background: var(--bg-overlay);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-subtle);
+}
+
+.glass-card {
+  background: var(--bg-overlay);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+/* ── 카드 glow 효과 (다크 모드 전용) ── */
+[data-theme="dark"] .card-glow {
+  box-shadow: 0 0 20px var(--accent-glow),
+              0 0 40px rgba(232, 55, 90, 0.05);
+}
+
+[data-theme="dark"] .card-glow:hover {
+  box-shadow: 0 0 30px var(--accent-glow),
+              0 0 60px rgba(232, 55, 90, 0.1);
+}
+
+/* ── 포커스 링 ── */
+.focus-ring:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ── 텍스트 말줄임 ── */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+/* ── 독서 상태 뱃지 색상 ── */
+.status-want { color: var(--status-want); }
+.status-reading { color: var(--status-reading); }
+.status-completed { color: var(--status-completed); }
+.status-dropped { color: var(--status-dropped); }
+
+.status-bg-want { background-color: rgba(139, 92, 246, 0.12); color: var(--status-want); }
+.status-bg-reading { background-color: rgba(59, 130, 246, 0.12); color: var(--status-reading); }
+.status-bg-completed { background-color: rgba(16, 185, 129, 0.12); color: var(--status-completed); }
+.status-bg-dropped { background-color: rgba(107, 114, 128, 0.12); color: var(--status-dropped); }
+
+/* ── 애니메이션 ── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 8px var(--accent-glow); }
+  50% { box-shadow: 0 0 20px var(--accent-glow); }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-fade-in {
+  animation: fadeIn var(--transition-normal) ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp var(--transition-slow) ease-out;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* ============================================================
+   4-ZONE 레이아웃
+   ============================================================ */
+
+.dashboard-shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) 1fr var(--right-panel-width);
+  grid-template-rows: var(--header-height) 1fr;
+  grid-template-areas:
+    "header header header"
+    "sidebar main right";
+  min-height: 100vh;
+  gap: 0;
+}
+
+.zone-header { grid-area: header; }
+.zone-sidebar { grid-area: sidebar; }
+.zone-main { grid-area: main; }
+.zone-right { grid-area: right; }
+
+/* ── 반응형: 태블릿 (1024px 미만) ── */
+@media (max-width: 1023px) {
+  .dashboard-shell {
+    grid-template-columns: var(--sidebar-width) 1fr;
+    grid-template-areas:
+      "header header"
+      "sidebar main";
+  }
+  .zone-right { display: none; }
+}
+
+/* ── 반응형: 모바일 (768px 미만) ── */
+@media (max-width: 767px) {
+  .dashboard-shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+    grid-template-areas:
+      "main"
+      "bottom-nav";
+  }
+  .zone-header { display: none; }
+  .zone-sidebar { display: none; }
+  .zone-right { display: none; }
+}

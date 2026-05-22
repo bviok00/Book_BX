@@ -57,7 +57,7 @@ export default async function SharedProfilePage({ params }: { params: Promise<{ 
             {profile.display_name}님의 서재
           </h1>
           <p style={{ color: 'var(--text-secondary)' }}>
-            Intellect BX로 지식을 구축하고 있습니다.
+            ContentDB_BX로 지식을 구축하고 있습니다.
           </p>
         </div>
       </div>

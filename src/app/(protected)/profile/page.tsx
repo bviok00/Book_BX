@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import Heatmap from '@/components/stats/Heatmap';
 import DashboardShell from '@/components/dashboard/DashboardShell';
@@ -16,12 +17,22 @@ export default async function ProfilePage() {
     redirect('/login');
   }
 
-  // 1. 프로필 정보 가져오기
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single();
+  // 1. 프로필 정보 및 폴더 가져오기
+  const [
+    { data: profile },
+    { data: folders }
+  ] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single(),
+    supabase
+      .from('folders')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('sort_order', { ascending: true })
+  ]);
 
   // 2. 유저의 도서 목록 가져오기 (상태별 분류 및 핀터레스트 스타일 책장용)
   const { data: userBooks } = await supabase
@@ -61,7 +72,9 @@ export default async function ProfilePage() {
   // 장르 통계 (레이더 차트)
   const genreCount: Record<string, number> = {};
   completedBooks.forEach(item => {
-    const category = item.books?.category;
+    // Supabase type might return an array for joined relations
+    const bookData = Array.isArray(item.books) ? item.books[0] : item.books;
+    const category = bookData?.category;
     if (category) {
       const mainGenre = category.split('>')[0].trim();
       genreCount[mainGenre] = (genreCount[mainGenre] || 0) + 1;
@@ -149,19 +162,20 @@ export default async function ProfilePage() {
                   columnGap: '16px',
                 }}>
                   {userBooks.map((item: any) => {
-                    const book = item.books;
+                    const book = Array.isArray(item.books) ? item.books[0] : item.books;
                     if (!book) return null;
                     return (
-                      <div 
-                        key={item.id} 
-                        style={{ breakInside: 'avoid', marginBottom: '16px', position: 'relative', borderRadius: 'var(--radius-md)', overflow: 'hidden', cursor: 'pointer' }}
-                        className="book-gallery-item focus-ring"
-                      >
-                        <img src={book.cover_url} alt={book.title} style={{ width: '100%', display: 'block', objectFit: 'cover' }} />
-                        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,0.8))', padding: '24px 12px 12px', color: 'white' }}>
-                          <h3 style={{ fontSize: '13px', fontWeight: 600, margin: 0 }} className="line-clamp-2">{book.title}</h3>
+                      <Link href={`/dashboard/book/${item.id}`} key={item.id}>
+                        <div 
+                          style={{ breakInside: 'avoid', marginBottom: '16px', position: 'relative', borderRadius: 'var(--radius-md)', overflow: 'hidden', cursor: 'pointer' }}
+                          className="book-gallery-item focus-ring"
+                        >
+                          <img src={book.cover_url} alt={book.title} style={{ width: '100%', display: 'block', objectFit: 'cover' }} />
+                          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,0.8))', padding: '24px 12px 12px', color: 'white' }}>
+                            <h3 style={{ fontSize: '13px', fontWeight: 600, margin: 0 }} className="line-clamp-2">{book.title}</h3>
+                          </div>
                         </div>
-                      </div>
+                      </Link>
                     );
                   })}
                 </div>

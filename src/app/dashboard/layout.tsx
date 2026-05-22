@@ -15,15 +15,25 @@ export default async function ProtectedLayout({
     redirect('/login');
   }
 
-  // 프로필 데이터 페칭
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single();
+  // 프로필 및 폴더 데이터 페칭
+  const [
+    { data: profile },
+    { data: folders }
+  ] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single(),
+    supabase
+      .from('folders')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('sort_order', { ascending: true })
+  ]);
 
   return (
-    <DashboardShell user={user} profile={profile}>
+    <DashboardShell user={user} profile={profile} folders={folders || []}>
       {children}
     </DashboardShell>
   );

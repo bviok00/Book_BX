@@ -2,15 +2,16 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { updateBookStatus, updateBookRating } from '@/app/dashboard/actions';
+import { updateBookStatus, updateBookRating, updateBookFolder } from '@/app/dashboard/actions';
 import type { BookStatus } from '@/types';
 import { StatusBadge } from '@/components/ui/Badge';
 
-export default function BookDetailHero({ userBook, book }: { userBook: any, book: any }) {
+export default function BookDetailHero({ userBook, book, folders = [] }: { userBook: any, book: any, folders?: any[] }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [optimisticStatus, setOptimisticStatus] = useState<BookStatus>(userBook.status);
   const [optimisticRating, setOptimisticRating] = useState<number>(userBook.rating || 0);
+  const [optimisticFolderId, setOptimisticFolderId] = useState<string | null>(userBook.folder_id || null);
 
   const handleStatusChange = (newStatus: BookStatus) => {
     setOptimisticStatus(newStatus);
@@ -19,10 +20,19 @@ export default function BookDetailHero({ userBook, book }: { userBook: any, book
     });
   };
 
-  const handleRatingChange = (newRating: number) => {
+  const handleRatingChange = (clickedRating: number) => {
+    const newRating = optimisticRating === clickedRating ? 0 : clickedRating;
     setOptimisticRating(newRating);
     startTransition(async () => {
-      await updateBookRating(userBook.id, newRating);
+      await updateBookRating(userBook.id, newRating === 0 ? null : newRating);
+    });
+  };
+
+  const handleFolderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newFolderId = e.target.value === 'none' ? null : e.target.value;
+    setOptimisticFolderId(newFolderId);
+    startTransition(async () => {
+      await updateBookFolder(userBook.id, newFolderId);
     });
   };
 
@@ -169,6 +179,31 @@ export default function BookDetailHero({ userBook, book }: { userBook: any, book
                   {status === 'WANT_TO_READ' ? '읽고 싶어요' : status === 'READING' ? '읽는 중' : '완독'}
                 </button>
               ))}
+
+              {/* 폴더 선택 드롭다운 */}
+              <select
+                value={optimisticFolderId || 'none'}
+                onChange={handleFolderChange}
+                disabled={isPending}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  background: 'rgba(0,0,0,0.4)',
+                  color: 'rgba(255,255,255,0.9)',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  backdropFilter: 'blur(5px)',
+                  transition: 'all 0.2s',
+                  outline: 'none',
+                  opacity: isPending ? 0.7 : 1
+                }}
+              >
+                <option value="none">📁 폴더 미지정</option>
+                {folders.map(f => (
+                  <option key={f.id} value={f.id}>{f.name}</option>
+                ))}
+              </select>
             </div>
 
             {/* 별점 평가 */}

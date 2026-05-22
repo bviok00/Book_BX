@@ -5,7 +5,7 @@ import { ToastProvider } from '@/components/ui/Toast';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Intellect BX — 지식 관제탑',
+  title: 'ContentDB_BX — 지식 관제탑',
   description:
     '도서 검색, 계층형 독서 노트, 인터랙티브 지식 그래프를 통한 Second Brain 구축 플랫폼.',
   manifest: '/manifest.json',

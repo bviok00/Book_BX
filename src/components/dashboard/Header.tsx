@@ -53,7 +53,7 @@ export default function Header({ user, profile }: HeaderProps) {
               letterSpacing: '-0.5px',
             }}
           >
-            Intellect BX
+            ContentDB_BX
           </span>
         </div>
 

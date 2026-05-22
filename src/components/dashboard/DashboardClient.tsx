@@ -43,14 +43,25 @@ export default function DashboardClient({
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentStatus = searchParams.get('status');
+  const currentFolderId = searchParams.get('folderId');
 
-  const filteredBooks = currentStatus
-    ? userBooks.filter((ub) => ub.status === currentStatus)
-    : userBooks;
+  let filteredBooks = userBooks;
+  
+  if (currentStatus && currentStatus !== 'ALL') {
+    filteredBooks = filteredBooks.filter((ub) => ub.status === currentStatus);
+  }
+  
+  if (currentFolderId) {
+    filteredBooks = filteredBooks.filter((ub) => ub.folder_id === currentFolderId);
+  }
 
-  // READING 상태인 책을 히어로로 표시
+  const currentFolderName = folders.find(f => f.id === currentFolderId)?.name;
+
+  // 상태별 그룹핑
   const readingBooks = filteredBooks.filter((ub) => ub.status === 'READING');
-  const otherBooks = filteredBooks.filter((ub) => ub.status !== 'READING');
+  const wantToReadBooks = filteredBooks.filter((ub) => ub.status === 'WANT_TO_READ');
+  const completedBooks = filteredBooks.filter((ub) => ub.status === 'COMPLETED');
+  const abandonedBooks = filteredBooks.filter((ub) => ub.status === 'ABANDONED');
 
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
@@ -69,7 +80,11 @@ export default function DashboardClient({
             color: 'var(--text-primary)',
           }}
         >
-          내 서재
+          {currentFolderName ? (
+            <><span style={{ color: 'var(--accent)', marginRight: '8px' }}>📁</span>{currentFolderName}</>
+          ) : (
+            '내 서재'
+          )}
           <span
             style={{
               fontSize: '14px',
@@ -159,7 +174,13 @@ export default function DashboardClient({
 
       {/* 뷰 렌더링 */}
       {viewMode === 'grid' && (
-        <GridView readingBooks={readingBooks} otherBooks={otherBooks} router={router} />
+        <GridView 
+          readingBooks={readingBooks} 
+          wantToReadBooks={wantToReadBooks}
+          completedBooks={completedBooks}
+          abandonedBooks={abandonedBooks}
+          router={router} 
+        />
       )}
       {viewMode === 'list' && (
         <ListView books={filteredBooks} router={router} />
@@ -171,90 +192,73 @@ export default function DashboardClient({
   );
 }
 
+// ── 공통 카드 렌더러 ──
+function renderBookGrid(title: string, icon: string, books: UserBookRow[], router: any) {
+  if (books.length === 0) return null;
+  return (
+    <section>
+      <h2
+        style={{
+          fontSize: '15px',
+          fontWeight: 600,
+          color: 'var(--text-secondary)',
+          marginBottom: '12px',
+        }}
+      >
+        {icon} {title} <span style={{ fontSize: '13px', color: 'var(--text-tertiary)', fontWeight: 400 }}>{books.length}</span>
+      </h2>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+          gap: '16px',
+        }}
+      >
+        {books.map((ub) => (
+          <div
+            key={ub.id}
+            draggable
+            onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'book', id: ub.id }))}
+          >
+            <PosterCard
+              coverUrl={ub.books?.cover_url || ''}
+              title={ub.books?.title || ''}
+              author={ub.books?.author || undefined}
+              status={ub.status}
+              dominantColor={ub.dominant_color || undefined}
+              onClick={() => router.push(`/dashboard/book/${ub.id}`)}
+            />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 // ── 그리드 뷰: 왓챠 스타일 포스터 카루셀 ──
 function GridView({
   readingBooks,
-  otherBooks,
+  wantToReadBooks,
+  completedBooks,
+  abandonedBooks,
   router,
 }: {
   readingBooks: UserBookRow[];
-  otherBooks: UserBookRow[];
+  wantToReadBooks: UserBookRow[];
+  completedBooks: UserBookRow[];
+  abandonedBooks: UserBookRow[];
   router: any;
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-      {/* 히어로: 현재 읽는 중 */}
-      {readingBooks.length > 0 && (
-        <section>
-          <h2
-            style={{
-              fontSize: '15px',
-              fontWeight: 600,
-              color: 'var(--text-secondary)',
-              marginBottom: '12px',
-            }}
-          >
-            📘 읽는 중
-          </h2>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
-              gap: '16px',
-            }}
-          >
-            {readingBooks.map((ub) => (
-              <PosterCard
-                key={ub.id}
-                coverUrl={ub.books?.cover_url || ''}
-                title={ub.books?.title || ''}
-                author={ub.books?.author || undefined}
-                status={ub.status}
-                dominantColor={ub.dominant_color || undefined}
-                onClick={() => router.push(`/dashboard/book/${ub.id}`)}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* 전체 서재 그리드 */}
-      {otherBooks.length > 0 && (
-        <section>
-          <h2
-            style={{
-              fontSize: '15px',
-              fontWeight: 600,
-              color: 'var(--text-secondary)',
-              marginBottom: '12px',
-            }}
-          >
-            📚 전체 서재
-          </h2>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
-              gap: '14px',
-            }}
-          >
-            {otherBooks.map((ub) => (
-              <PosterCard
-                key={ub.id}
-                coverUrl={ub.books?.cover_url || ''}
-                title={ub.books?.title || ''}
-                author={ub.books?.author || undefined}
-                status={ub.status}
-                dominantColor={ub.dominant_color || undefined}
-                onClick={() => router.push(`/dashboard/book/${ub.id}`)}
-              />
-            ))}
-          </div>
-        </section>
-      )}
+      {renderBookGrid('읽는 중', '📘', readingBooks, router)}
+      {renderBookGrid('읽고 싶은', '💜', wantToReadBooks, router)}
+      {renderBookGrid('완독', '✅', completedBooks, router)}
+      {renderBookGrid('중단', '⏹️', abandonedBooks, router)}
     </div>
   );
 }
+
 
 // ── 리스트 뷰: 고밀도 테이블 ──
 function ListView({ books, router }: { books: UserBookRow[], router: any }) {
@@ -286,6 +290,8 @@ function ListView({ books, router }: { books: UserBookRow[], router: any }) {
       {books.map((ub) => (
         <div
           key={ub.id}
+          draggable
+          onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'book', id: ub.id }))}
           style={{
             display: 'grid',
             gridTemplateColumns: '48px 1fr 100px 80px 100px',
@@ -293,7 +299,7 @@ function ListView({ books, router }: { books: UserBookRow[], router: any }) {
             alignItems: 'center',
             padding: '10px 0',
             borderBottom: '1px solid var(--border-subtle)',
-            cursor: 'pointer',
+            cursor: 'grab',
             transition: 'background-color var(--transition-fast)',
           }}
           onClick={() => router.push(`/dashboard/book/${ub.id}`)}
@@ -372,13 +378,15 @@ function SpineView({ books, router }: { books: UserBookRow[], router: any }) {
           {completedBooks.map((ub) => (
             <div
               key={ub.id}
+              draggable
+              onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'book', id: ub.id }))}
               title={ub.books?.title || ''}
               style={{
                 width: '24px',
                 height: `${60 + Math.random() * 30}px`,
                 backgroundColor: ub.dominant_color || 'var(--accent)',
                 borderRadius: '2px',
-                cursor: 'pointer',
+                cursor: 'grab',
                 transition: 'transform var(--transition-fast)',
               }}
               onClick={() => router.push(`/dashboard/book/${ub.id}`)}
@@ -426,13 +434,15 @@ function SpineView({ books, router }: { books: UserBookRow[], router: any }) {
             {otherBooks.map((ub) => (
               <div
                 key={ub.id}
+                draggable
+                onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'book', id: ub.id }))}
                 title={ub.books?.title || ''}
                 style={{
                   width: '20px',
                   height: `${50 + Math.random() * 20}px`,
                   backgroundColor: ub.dominant_color || 'var(--text-tertiary)',
                   borderRadius: '2px',
-                  cursor: 'pointer',
+                  cursor: 'grab',
                   opacity: 0.6,
                 }}
                 onClick={() => router.push(`/dashboard/book/${ub.id}`)}

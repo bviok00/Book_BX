@@ -28,8 +28,9 @@ export default function BookDetailOverlay({ isOpen, onClose, userBook }: any) {
     else showToast(res.message, 'error');
   };
 
-  const handleRatingChange = async (rating: number) => {
-    const res = await updateBookRating(userBook.id, rating);
+  const handleRatingChange = async (clickedRating: number) => {
+    const newRating = (userBook.rating || 0) === clickedRating ? 0 : clickedRating;
+    const res = await updateBookRating(userBook.id, newRating === 0 ? null : newRating);
     if (res.success) showToast(res.message, 'success');
     else showToast(res.message, 'error');
   };

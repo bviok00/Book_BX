@@ -1,13 +1,20 @@
 'use client';
 
 import { useState, useTransition, useRef, useEffect } from 'react';
-import { createNote } from '@/app/dashboard/actions';
+import { createNote, updateNote, deleteNote } from '@/app/dashboard/actions';
+import { useRouter } from 'next/navigation';
 
 export default function BookNotesFeed({ userBookId, notes, user }: { userBookId: string, notes: any[], user: any }) {
+  const router = useRouter();
   const [content, setContent] = useState('');
   const [page, setPage] = useState('');
+  const [tagsInput, setTagsInput] = useState('');
   const [isPending, startTransition] = useTransition();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Edit state
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState('');
 
   // Auto-resize logic
   useEffect(() => {
@@ -24,10 +31,37 @@ export default function BookNotesFeed({ userBookId, notes, user }: { userBookId:
 
     startTransition(async () => {
       const pageRefStr = page.trim() ? `p.${page.trim()}` : undefined;
-      const res = await createNote(userBookId, content, undefined, pageRefStr);
+      const tagsArray = tagsInput.split(',').map(t => t.trim()).filter(Boolean);
+      const res = await createNote(userBookId, content, undefined, pageRefStr, tagsArray.length > 0 ? tagsArray : undefined);
       if (res.success) {
         setContent('');
         setPage('');
+        setTagsInput('');
+      } else {
+        alert(res.message);
+      }
+    });
+  };
+
+  const handleDelete = (noteId: string) => {
+    if (!window.confirm('정말 삭제하시겠습니까?')) return;
+    startTransition(async () => {
+      const res = await deleteNote(noteId);
+      if (!res.success) alert(res.message);
+    });
+  };
+
+  const startEdit = (note: any) => {
+    setEditingNoteId(note.id);
+    setEditContent(note.content);
+  };
+
+  const handleSaveEdit = (noteId: string) => {
+    if (!editContent.trim()) return;
+    startTransition(async () => {
+      const res = await updateNote(noteId, editContent);
+      if (res.success) {
+        setEditingNoteId(null);
       } else {
         alert(res.message);
       }
@@ -91,6 +125,23 @@ export default function BookNotesFeed({ userBookId, notes, user }: { userBookId:
                   padding: '2px 4px'
                 }}
               />
+              <span style={{ fontSize: '13px', color: 'var(--text-tertiary)', fontWeight: 600, marginLeft: '12px' }}>#</span>
+              <input
+                type="text"
+                placeholder="태그 (쉼표로 구분)"
+                value={tagsInput}
+                onChange={(e) => setTagsInput(e.target.value)}
+                style={{
+                  width: '140px',
+                  background: 'transparent',
+                  border: 'none',
+                  borderBottom: '1px solid var(--border-subtle)',
+                  color: 'var(--text-primary)',
+                  fontSize: '13px',
+                  outline: 'none',
+                  padding: '2px 4px'
+                }}
+              />
             </div>
             <button
               type="submit"
@@ -134,13 +185,54 @@ export default function BookNotesFeed({ userBookId, notes, user }: { userBookId:
                     {note.page_reference}
                   </span>
                 )}
-                <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginLeft: 'auto', letterSpacing: '0.5px' }}>
+                {note.note_tags?.map((nt: any, idx: number) => (
+                  <span 
+                    key={idx} 
+                    style={{ fontSize: '11px', color: 'var(--accent)', border: '1px solid var(--accent)', padding: '2px 6px', borderRadius: '12px', fontWeight: 500, cursor: 'pointer' }}
+                    onClick={() => router.push(`/dashboard/tags/${nt.tag_id}`)}
+                  >
+                    #{nt.tags?.name}
+                  </span>
+                ))}
+                <span suppressHydrationWarning style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginLeft: 'auto', letterSpacing: '0.5px' }}>
                   {new Date(note.created_at).toLocaleString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(/. /g, '.').replace(':', ':')}
                 </span>
               </div>
-              <p style={{ fontSize: '15px', color: 'var(--text-primary)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
-                {note.content}
-              </p>
+              
+              {editingNoteId === note.id ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <textarea
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    style={{
+                      width: '100%',
+                      minHeight: '60px',
+                      backgroundColor: 'var(--bg-secondary)',
+                      border: '1px solid var(--border-subtle)',
+                      borderRadius: 'var(--radius-md)',
+                      color: 'var(--text-primary)',
+                      fontSize: '15px',
+                      padding: '8px',
+                      outline: 'none',
+                      resize: 'none'
+                    }}
+                  />
+                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                    <button onClick={() => setEditingNoteId(null)} style={{ padding: '4px 12px', fontSize: '12px', background: 'transparent', color: 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>취소</button>
+                    <button onClick={() => handleSaveEdit(note.id)} disabled={isPending} style={{ padding: '4px 12px', fontSize: '12px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>저장</button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <p style={{ fontSize: '15px', color: 'var(--text-primary)', lineHeight: 1.6, whiteSpace: 'pre-wrap', margin: 0, flex: 1 }}>
+                    {note.content}
+                  </p>
+                  <div style={{ display: 'flex', gap: '8px', marginLeft: '12px', opacity: 0.5 }}>
+                    <button onClick={() => startEdit(note)} title="수정" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px' }}>✏️</button>
+                    <button onClick={() => handleDelete(note.id)} title="삭제" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px' }}>🗑️</button>
+                  </div>
+                </div>
+              )}
             </div>
           ))
         )}

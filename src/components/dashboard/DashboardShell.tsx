@@ -13,12 +13,14 @@ interface DashboardShellProps {
   children: ReactNode;
   user: User;
   profile: Profile | null;
+  folders?: any[];
 }
 
 export default function DashboardShell({
   children,
   user,
   profile,
+  folders = [],
 }: DashboardShellProps) {
   return (
     <>
@@ -30,7 +32,7 @@ export default function DashboardShell({
 
         {/* ZONE 2: 좌측 사이드바 */}
         <div className="zone-sidebar">
-          <Sidebar />
+          <Sidebar folders={folders} />
         </div>
 
         {/* ZONE 3: 중앙 메인 패널 */}

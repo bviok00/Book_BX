@@ -103,7 +103,7 @@ export default function ShareCard({
                 <h2 style={{ fontSize: '36px', fontWeight: 700, marginBottom: '8px' }}>{bookTitle}</h2>
                 <p style={{ fontSize: '24px', color: 'rgba(255,255,255,0.7)' }}>{author}</p>
                 <div style={{ marginTop: '24px', padding: '8px 16px', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '20px', display: 'inline-block', fontSize: '20px' }}>
-                  Intellect BX
+                  ContentDB_BX
                 </div>
               </div>
             </div>

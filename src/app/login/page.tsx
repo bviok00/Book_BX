@@ -100,7 +100,7 @@ export default function LoginPage() {
               letterSpacing: '-0.5px',
             }}
           >
-            Intellect BX
+            ContentDB_BX
           </h1>
           <p
             style={{

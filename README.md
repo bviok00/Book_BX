@@ -1,6 +1,6 @@
-# Intellect BX — 시네마틱 지식 관제탑
+# ContentDB_BX — 시네마틱 지식 관제탑
 
-Intellect BX는 단순한 독서 기록 앱을 넘어, 사용자의 독서 경험과 지식을 시각화하고 확장하는 **Second Brain(두 번째 뇌)** 플랫폼입니다. 왓챠(Watcha) 스타일의 아름다운 UI와 Notion의 계층형 노트, Obsidian의 지식 그래프 개념을 융합했습니다.
+ContentDB_BX는 단순한 독서 기록 앱을 넘어, 사용자의 독서 경험과 지식을 시각화하고 확장하는 **Second Brain(두 번째 뇌)** 플랫폼입니다. 왓챠(Watcha) 스타일의 아름다운 UI와 Notion의 계층형 노트, Obsidian의 지식 그래프 개념을 융합했습니다.
 
 ## 🚀 주요 기능
 

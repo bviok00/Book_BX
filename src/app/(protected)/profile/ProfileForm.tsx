@@ -85,17 +85,30 @@ export default function ProfileForm({ user, profile }: ProfileFormProps) {
           </label>
         </div>
 
-        <Button type="submit" isLoading={isLoading} style={{ marginTop: '8px' }}>
+        <Button 
+          type="submit" 
+          isLoading={isLoading} 
+          style={{ 
+            marginTop: '8px', 
+            backgroundColor: '#1a1a1a', 
+            color: '#ffffff',
+            border: '1px solid #333'
+          }}
+        >
           프로필 저장
         </Button>
       </form>
 
       <div style={{ marginTop: '16px', paddingTop: '24px', borderTop: '1px solid var(--border-subtle)' }}>
         <Button 
-          variant="danger" 
           onClick={handleLogout} 
           isLoading={isLoggingOut}
-          style={{ width: '100%', borderColor: '#ef4444', color: '#ef4444' }}
+          style={{ 
+            width: '100%', 
+            backgroundColor: '#1a1a1a', 
+            color: '#ffffff',
+            border: '1px solid #333'
+          }}
         >
           로그아웃
         </Button>

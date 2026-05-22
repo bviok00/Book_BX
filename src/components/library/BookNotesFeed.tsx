@@ -1,20 +1,33 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useRef, useEffect } from 'react';
 import { createNote } from '@/app/dashboard/actions';
 
 export default function BookNotesFeed({ userBookId, notes, user }: { userBookId: string, notes: any[], user: any }) {
   const [content, setContent] = useState('');
+  const [page, setPage] = useState('');
   const [isPending, startTransition] = useTransition();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize logic
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = '80px';
+      const scrollHeight = textareaRef.current.scrollHeight;
+      textareaRef.current.style.height = Math.max(80, scrollHeight) + 'px';
+    }
+  }, [content]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim()) return;
 
     startTransition(async () => {
-      const res = await createNote(userBookId, content);
+      const pageRefStr = page.trim() ? `p.${page.trim()}` : undefined;
+      const res = await createNote(userBookId, content, undefined, pageRefStr);
       if (res.success) {
         setContent('');
+        setPage('');
       } else {
         alert(res.message);
       }
@@ -42,6 +55,7 @@ export default function BookNotesFeed({ userBookId, notes, user }: { userBookId:
           }}
         >
           <textarea
+            ref={textareaRef}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="이 책에 대한 생각이나 기억에 남는 문구를 남겨보세요..."
@@ -53,14 +67,31 @@ export default function BookNotesFeed({ userBookId, notes, user }: { userBookId:
               border: 'none',
               resize: 'none',
               color: 'var(--text-primary)',
-              fontSize: '14px',
-              outline: 'none'
+              fontSize: '15px',
+              outline: 'none',
+              lineHeight: 1.6
             }}
           />
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>
-              {user.email}
-            </span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '13px', color: 'var(--text-tertiary)', fontWeight: 600 }}>P.</span>
+              <input
+                type="number"
+                placeholder="페이지"
+                value={page}
+                onChange={(e) => setPage(e.target.value)}
+                style={{
+                  width: '60px',
+                  background: 'transparent',
+                  border: 'none',
+                  borderBottom: '1px solid var(--border-subtle)',
+                  color: 'var(--text-primary)',
+                  fontSize: '13px',
+                  outline: 'none',
+                  padding: '2px 4px'
+                }}
+              />
+            </div>
             <button
               type="submit"
               disabled={isPending || !content.trim()}
@@ -98,11 +129,16 @@ export default function BookNotesFeed({ userBookId, notes, user }: { userBookId:
                 <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
                   {user.email?.split('@')[0]}
                 </span>
-                <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginLeft: 'auto' }}>
-                  {new Date(note.created_at).toLocaleDateString()}
+                {note.page_reference && (
+                  <span style={{ fontSize: '11px', color: 'var(--accent)', background: 'var(--accent-light)', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>
+                    {note.page_reference}
+                  </span>
+                )}
+                <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginLeft: 'auto', letterSpacing: '0.5px' }}>
+                  {new Date(note.created_at).toLocaleString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(/. /g, '.').replace(':', ':')}
                 </span>
               </div>
-              <p style={{ fontSize: '14px', color: 'var(--text-primary)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+              <p style={{ fontSize: '15px', color: 'var(--text-primary)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
                 {note.content}
               </p>
             </div>

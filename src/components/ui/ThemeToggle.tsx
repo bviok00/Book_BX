@@ -1,7 +1,7 @@
 'use client';
 // 테마 토글 스위치 — next-themes 기반 Light/Dark 전환
 
-import { useTheme } from 'next-themes';
+import { useTheme } from '@teispace/next-themes';
 import { useEffect, useState } from 'react';
 
 export default function ThemeToggle() {

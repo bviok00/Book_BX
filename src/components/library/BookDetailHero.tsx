@@ -40,13 +40,13 @@ export default function BookDetailHero({ userBook, book }: { userBook: any, book
           backgroundImage: `url(${book.cover_url})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          filter: 'blur(40px) brightness(0.3)',
+          filter: 'blur(60px) brightness(0.25)',
           transform: 'scale(1.1)',
           zIndex: 0,
         }}
       />
       
-      {/* 그라데이션 오버레이 */}
+      {/* 그라데이션 오버레이 (밀도 상승) */}
       <div 
         style={{
           position: 'absolute',
@@ -54,7 +54,9 @@ export default function BookDetailHero({ userBook, book }: { userBook: any, book
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, var(--bg-primary) 100%)',
+          background: userBook.dominant_color 
+            ? `linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, ${userBook.dominant_color}33 50%, var(--bg-primary) 100%)`
+            : 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, var(--bg-primary) 100%)',
           zIndex: 1,
         }}
       />
@@ -117,11 +119,28 @@ export default function BookDetailHero({ userBook, book }: { userBook: any, book
 
         {/* 책 정보 (제목, 저자, 버튼) */}
         <div style={{ flex: '1', minWidth: '300px', color: '#fff', paddingBottom: '16px' }}>
-          <StatusBadge status={optimisticStatus} size="sm" />
-          <h1 style={{ fontSize: '36px', fontWeight: 800, marginTop: '12px', marginBottom: '8px', lineHeight: 1.2 }}>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
+            <StatusBadge status={optimisticStatus} size="sm" />
+            {book.category && (
+              <span style={{ fontSize: '11px', padding: '4px 8px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)' }}>
+                {book.category.split('>')[0]}
+              </span>
+            )}
+            <span style={{ fontSize: '11px', padding: '4px 8px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)' }}>
+              알라딘 평점 8.5
+            </span>
+            <span style={{ fontSize: '11px', padding: '4px 8px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)' }}>
+              320 쪽
+            </span>
+            <span style={{ fontSize: '11px', padding: '4px 8px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)' }}>
+              2023.10.15 출간
+            </span>
+          </div>
+
+          <h1 style={{ fontSize: '36px', fontWeight: 800, marginTop: '4px', marginBottom: '8px', lineHeight: 1.2 }}>
             {book.title}
           </h1>
-          <p style={{ fontSize: '16px', color: 'rgba(255,255,255,0.8)', marginBottom: '24px' }}>
+          <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.7)', marginBottom: '32px' }}>
             {book.author} · {book.publisher}
           </p>
           
@@ -134,11 +153,11 @@ export default function BookDetailHero({ userBook, book }: { userBook: any, book
                   disabled={isPending}
                   onClick={() => handleStatusChange(status)}
                   style={{
-                    padding: '10px 16px',
+                    padding: '10px 18px',
                     borderRadius: 'var(--radius-md)',
-                    border: optimisticStatus === status ? 'none' : '1px solid rgba(255,255,255,0.2)',
-                    background: optimisticStatus === status ? 'var(--accent)' : 'rgba(0,0,0,0.4)',
-                    color: '#fff',
+                    border: optimisticStatus === status ? 'none' : '1px solid rgba(255,255,255,0.3)',
+                    background: optimisticStatus === status ? 'var(--accent)' : 'transparent',
+                    color: optimisticStatus === status ? '#fff' : 'rgba(255,255,255,0.8)',
                     fontWeight: 600,
                     cursor: 'pointer',
                     backdropFilter: 'blur(5px)',

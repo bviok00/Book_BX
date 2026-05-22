@@ -1,7 +1,6 @@
 'use client';
 // next-themes ThemeProvider 클라이언트 래퍼
-
-import { ThemeProvider as NextThemesProvider } from 'next-themes';
+import { ThemeProvider as NextThemesProvider } from '@teispace/next-themes';
 import { type ReactNode } from 'react';
 
 export default function ThemeProvider({ children }: { children: ReactNode }) {

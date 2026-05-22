@@ -40,6 +40,7 @@ export default async function ProfilePage() {
     .select(`
       id,
       status,
+      dominant_color,
       books (
         isbn,
         title,

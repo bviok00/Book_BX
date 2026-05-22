@@ -16,6 +16,7 @@ interface UserBookRow {
   status: string;
   rating: number | null;
   dominant_color: string | null;
+  folder_id: string | null;
   sort_order: number;
   created_at: string;
   books: {

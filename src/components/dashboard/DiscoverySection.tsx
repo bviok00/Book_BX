@@ -232,68 +232,21 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
   }
 
   return (
-    <div style={{ display: 'flex', gap: '32px', position: 'relative', alignItems: 'flex-start' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
       
-      {/* ── 좌측 스티키 앵커 네비게이션 ── */}
-      {!filterType && tags.length > 0 && (
-        <div style={{
-          position: 'sticky',
-          top: '100px',
-          width: '200px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '8px',
-          paddingRight: '16px',
-          borderRight: '1px solid var(--border-subtle)',
-          maxHeight: 'calc(100vh - 120px)',
-          overflowY: 'auto'
-        }}>
-          <h3 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-tertiary)', marginBottom: '8px', paddingLeft: '12px' }}>
-            태그 네비게이션
-          </h3>
-          {tags.map(tag => (
-            <button
-              key={`nav-${tag}`}
-              onClick={() => {
-                const el = document.getElementById(`tag-section-${tag}`);
-                if (el) {
-                  const y = el.getBoundingClientRect().top + window.scrollY - 80;
-                  window.scrollTo({ top: y, behavior: 'smooth' });
-                }
-              }}
-              style={{
-                textAlign: 'left',
-                padding: '8px 12px',
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--text-secondary)',
-                fontSize: '14px',
-                cursor: 'pointer',
-                borderRadius: 'var(--radius-sm)',
-                transition: 'all 0.2s'
-              }}
-              className="hover-bg"
-            >
-              # {tag}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* ── 추천 리스트 ── */}
+      {tags.map((tag) => {
+        const curations = recommendations[tag] || [];
+        if (curations.length === 0) return null;
 
-      {/* ── 우측 추천 리스트 ── */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '48px', minWidth: 0 }}>
-        {tags.map((tag) => {
-          const curations = recommendations[tag] || [];
-          if (curations.length === 0) return null;
-
-          return (
-            <section key={tag} id={`tag-section-${tag}`} style={{ scrollMarginTop: '80px' }}>
-              <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <h3 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  <span style={{ color: 'var(--accent)', marginRight: '8px' }}>#</span>
-                  {tag}
-                </h3>
-              </div>
+        return (
+          <section key={tag} id={`tag-section-${tag}`} style={{ scrollMarginTop: '80px' }}>
+            <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                <span style={{ color: 'var(--accent)', marginRight: '8px' }}>#</span>
+                {tag}
+              </h3>
+            </div>
               
               <HorizontalScroll>
                 {curations.map(item => (
@@ -342,7 +295,7 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
             </section>
           );
         })}
-      </div>
+    </div>
 
       {/* Preview Modal */}
       {previewItem && (

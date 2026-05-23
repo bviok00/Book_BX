@@ -134,12 +134,11 @@ export async function addAnimeNote(userAnimeId: string, content: string): Promis
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, message: '인증이 필요합니다.' };
 
-    const { error } = await supabase.from('granular_notes').insert({
-      user_id: user.id,
-      item_type: 'ANIME',
-      item_id: userAnimeId,
-      content,
-    });
+        const { error } = await supabase.from('granular_notes').insert({
+          user_id: user.id,
+          user_anime_id: userAnimeId,
+          content,
+        });
 
     if (error) return { success: false, message: `노트 작성 실패: ${error.message}` };
 

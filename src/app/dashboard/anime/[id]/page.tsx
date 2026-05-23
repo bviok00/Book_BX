@@ -26,8 +26,7 @@ export default async function AnimeDetailPage({
     *,
     animes (*),
     folders (id, name),
-    anime_tags (tags (id, name)),
-    granular_notes (*, note_tags (tags (id, name)))
+    anime_tags (tags (id, name))
   `).eq('user_id', user.id);
 
   if (isUuid) {
@@ -244,7 +243,14 @@ export default async function AnimeDetailPage({
       };
     });
 
-  const notes = userAnime.granular_notes || [];
+  // Fetch notes separately until the DB schema migration is run, to avoid page crashing
+  const { data: notesData } = await supabase
+    .from('granular_notes')
+    .select('*, note_tags (tags (id, name))')
+    .eq('user_anime_id', userAnime.id)
+    .order('created_at', { ascending: true });
+
+  const notes = notesData || [];
 
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>

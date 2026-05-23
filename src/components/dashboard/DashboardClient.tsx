@@ -178,6 +178,14 @@ export default function DashboardClient({
 
       {currentTab === 'BOOK' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+          {unifiedBooks.length > 0 && (
+            <DiscoverySection 
+              existingIsbns={unifiedBooks.map(c => c.contentId)} 
+              existingTmdbIds={unifiedMovies.map(c => c.contentId)}
+              existingAnilistIds={unifiedAnimes.map(c => c.contentId)}
+              filterType="BOOK"
+            />
+          )}
           <div>
             <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <h2 style={{ fontSize: '20px', fontWeight: 700 }}>📚 도서 컬렉션</h2>
@@ -196,6 +204,14 @@ export default function DashboardClient({
 
       {currentTab === 'MOVIE' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+          {unifiedMovies.length > 0 && (
+            <DiscoverySection 
+              existingIsbns={unifiedBooks.map(c => c.contentId)} 
+              existingTmdbIds={unifiedMovies.map(c => c.contentId)}
+              existingAnilistIds={unifiedAnimes.map(c => c.contentId)}
+              filterType="MOVIE"
+            />
+          )}
           <div>
             <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <h2 style={{ fontSize: '20px', fontWeight: 700 }}>🎬 영화 컬렉션</h2>
@@ -214,6 +230,14 @@ export default function DashboardClient({
 
       {currentTab === 'ANIME' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+          {unifiedAnimes.length > 0 && (
+            <DiscoverySection 
+              existingIsbns={unifiedBooks.map(c => c.contentId)} 
+              existingTmdbIds={unifiedMovies.map(c => c.contentId)}
+              existingAnilistIds={unifiedAnimes.map(c => c.contentId)}
+              filterType="ANIME"
+            />
+          )}
           <div>
             <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <h2 style={{ fontSize: '20px', fontWeight: 700 }}>🌸 애니 컬렉션</h2>

@@ -21,7 +21,7 @@ export interface Folder {
   user_id: string;
   name: string;
   sort_order: number;
-  media_type: 'BOOK' | 'MOVIE';
+  media_type: 'BOOK' | 'MOVIE' | 'ANIME';
   created_at: string;
 }
 
@@ -113,7 +113,7 @@ export interface NoteTag {
 }
 
 // ── 콘텐츠 유형 구분자 ──
-export type ContentType = 'BOOK' | 'MOVIE';
+export type ContentType = 'BOOK' | 'MOVIE' | 'ANIME';
 
 // ── 영화 상태 4-State Machine ──
 export type MovieStatus = 'WANT_TO_WATCH' | 'WATCHING' | 'COMPLETED' | 'DROPPED';
@@ -156,5 +156,48 @@ export interface UserMovie {
 // ── 13. 영화↔태그 관계 ──
 export interface MovieTag {
   user_movie_id: string;
+  tag_id: string;
+}
+
+// ── 애니 상태 4-State Machine ──
+export type AnimeStatus = 'WANT_TO_WATCH' | 'WATCHING' | 'COMPLETED' | 'DROPPED';
+
+// ── 14. 마스터 애니메이션 (AniList API 캐싱 풀) ──
+export interface Anime {
+  anilist_id: number;            // PK
+  title: string;
+  original_title: string | null;
+  director: string | null;
+  poster_url: string | null;
+  backdrop_url: string | null;
+  genre: string | null;
+  release_date: string | null;
+  runtime_min: number | null;
+  overview: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+// ── 15. 내 애니관 (유저×애니 관계) ──
+export interface UserAnime {
+  id: string;
+  user_id: string;
+  anilist_id: number;
+  folder_id: string | null;
+  status: AnimeStatus;
+  progress_pct: number;
+  rating: number | null;
+  summary_note: string | null;
+  dominant_color: string | null;
+  sort_order: number;
+  started_at: string | null;
+  finished_at: string | null;
+  updated_at: string;
+  created_at: string;
+}
+
+// ── 16. 애니↔태그 관계 ──
+export interface AnimeTag {
+  user_anime_id: string;
   tag_id: string;
 }

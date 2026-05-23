@@ -267,7 +267,7 @@ export default function BookDetailHero({ userBook, book, folders = [], isReadOnl
                     }}
                   >
                     <option value="none" style={{ background: '#1a1a1a', color: '#fff' }}>📁 폴더 미지정</option>
-                    {folders.map(f => (
+                    {folders.filter(f => f.media_type === 'BOOK').map(f => (
                       <option key={f.id} value={f.id} style={{ background: '#1a1a1a', color: '#fff' }}>{f.name}</option>
                     ))}
                   </select>

@@ -12,6 +12,7 @@ export default async function DashboardPage() {
   const [
     { data: userBooks },
     { data: userMovies },
+    { data: userAnimes },
     { data: folders },
     { data: readingSessions },
   ] = await Promise.all([
@@ -23,6 +24,11 @@ export default async function DashboardPage() {
     supabase
       .from('user_movies')
       .select('*, movies(*)')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('user_animes')
+      .select('*, animes(*)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }),
     supabase
@@ -42,6 +48,7 @@ export default async function DashboardPage() {
     <DashboardClient
       userBooks={userBooks || []}
       userMovies={userMovies || []}
+      userAnimes={userAnimes || []}
       folders={folders || []}
       readingSessions={readingSessions || []}
     />

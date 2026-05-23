@@ -173,6 +173,25 @@ export async function updateMovieProgress(
   }
 }
 
+// ── 영화 폴더 이동 ──
+export async function updateMovieFolder(userMovieId: string, folderId: string | null): Promise<ActionResponse> {
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from('user_movies')
+      .update({ folder_id: folderId })
+      .eq('id', userMovieId);
+
+    if (error) return { success: false, message: `폴더 이동 실패: ${error.message}` };
+    
+    revalidatePath('/dashboard');
+    return { success: true, message: '폴더가 변경되었습니다.' };
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : '알 수 없는 오류';
+    return { success: false, message: msg };
+  }
+}
+
 // ── 스마트 큐레이션을 위한 상위 태그 추출 ──
 export async function getTopTags(limit = 3, filterType?: 'BOOK' | 'MOVIE'): Promise<ActionResponse<string[]>> {
   try {

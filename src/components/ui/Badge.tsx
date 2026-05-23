@@ -1,12 +1,12 @@
 'use client';
 // 독서 상태 뱃지 + 태그 뱃지 컴포넌트
 
-import type { BookStatus, MovieStatus } from '@/types';
+import type { BookStatus, MovieStatus, AnimeStatus } from '@/types';
 
 interface StatusBadgeProps {
-  status: BookStatus | MovieStatus;
+  status: BookStatus | MovieStatus | AnimeStatus;
   size?: 'sm' | 'md';
-  type?: 'BOOK' | 'MOVIE';
+  type?: 'BOOK' | 'MOVIE' | 'ANIME';
 }
 
 const STATUS_CONFIG: Record<string, { label: string; movieLabel?: string; className: string }> = {
@@ -20,7 +20,7 @@ const STATUS_CONFIG: Record<string, { label: string; movieLabel?: string; classN
 
 export function StatusBadge({ status, size = 'sm', type = 'BOOK' }: StatusBadgeProps) {
   const config = STATUS_CONFIG[status as string] || STATUS_CONFIG['WANT_TO_READ'];
-  const displayLabel = type === 'MOVIE' && config.movieLabel ? config.movieLabel : config.label;
+  const displayLabel = (type === 'MOVIE' || type === 'ANIME') && config.movieLabel ? config.movieLabel : config.label;
 
   return (
     <span

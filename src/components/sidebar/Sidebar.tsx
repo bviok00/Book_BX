@@ -4,6 +4,8 @@
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { createFolder, updateBookFolder, updateFolder, deleteFolder } from '@/app/dashboard/actions';
+import { updateMovieFolder } from '@/app/dashboard/movie-actions';
+import { updateAnimeFolder } from '@/app/dashboard/anime-actions';
 import type { Folder } from '@/types';
 
 const BOOK_STATUS_TABS = [
@@ -22,19 +24,30 @@ const MOVIE_STATUS_TABS = [
   { key: 'DROPPED', label: '중단', icon: '⏸️' },
 ];
 
+const ANIME_STATUS_TABS = [
+  { key: 'ALL', label: '전체 애니', icon: '🌸' },
+  { key: 'WATCHING', label: '보는 중', icon: '🔥' },
+  { key: 'WANT_TO_WATCH', label: '위시리스트', icon: '💜' },
+  { key: 'COMPLETED', label: '시청 완료', icon: '✅' },
+  { key: 'DROPPED', label: '중단', icon: '⏹️' },
+];
+
 export default function Sidebar({ folders = [] }: { folders?: Folder[] }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
   
-  let currentTab = (searchParams.get('tab') as 'HOME' | 'BOOK' | 'MOVIE') || 'HOME';
+  let currentTab = (searchParams.get('tab') as 'HOME' | 'BOOK' | 'MOVIE' | 'ANIME') || 'HOME';
   if (pathname.startsWith('/dashboard/book')) currentTab = 'BOOK';
   if (pathname.startsWith('/dashboard/movie')) currentTab = 'MOVIE';
+  if (pathname.startsWith('/dashboard/anime')) currentTab = 'ANIME';
 
   const bookStatus = searchParams.get('bookStatus') || 'ALL';
   const movieStatus = searchParams.get('movieStatus') || 'ALL';
+  const animeStatus = searchParams.get('animeStatus') || 'ALL';
   const activeBookFolderId = searchParams.get('bookFolderId');
   const activeMovieFolderId = searchParams.get('movieFolderId');
+  const activeAnimeFolderId = searchParams.get('animeFolderId');
   
   const [isPending, startTransition] = useTransition();
 
@@ -45,6 +58,7 @@ export default function Sidebar({ folders = [] }: { folders?: Folder[] }) {
 
   const bookFolders = folders.filter(f => f.media_type === 'BOOK' || !f.media_type);
   const movieFolders = folders.filter(f => f.media_type === 'MOVIE');
+  const animeFolders = folders.filter(f => f.media_type === 'ANIME');
 
   const updateQueryParams = (paramsToUpdate: Record<string, string | null>) => {
     const current = new URLSearchParams(Array.from(searchParams.entries()));
@@ -57,8 +71,9 @@ export default function Sidebar({ folders = [] }: { folders?: Folder[] }) {
     router.push(`/dashboard${query}`);
   };
 
-  const handleCreateFolder = (mediaType: 'BOOK' | 'MOVIE') => {
-    const name = window.prompt(`새 ${mediaType === 'BOOK' ? '도서' : '영화'} 폴더 이름을 입력하세요:`);
+  const handleCreateFolder = (mediaType: 'BOOK' | 'MOVIE' | 'ANIME') => {
+    const label = mediaType === 'BOOK' ? '도서' : mediaType === 'MOVIE' ? '영화' : '애니';
+    const name = window.prompt(`새 ${label} 폴더 이름을 입력하세요:`);
     if (name && name.trim()) {
       startTransition(async () => {
         const res = await createFolder(name.trim(), mediaType);
@@ -98,7 +113,7 @@ export default function Sidebar({ folders = [] }: { folders?: Folder[] }) {
     setDraggedFolderId(folderId);
   };
 
-  const onDrop = (e: React.DragEvent, targetFolderId: string, folderMediaType: 'BOOK' | 'MOVIE') => {
+  const onDrop = (e: React.DragEvent, targetFolderId: string, folderMediaType: 'BOOK' | 'MOVIE' | 'ANIME') => {
     e.preventDefault();
     setDraggedFolderId(null);
     try {
@@ -109,12 +124,20 @@ export default function Sidebar({ folders = [] }: { folders?: Folder[] }) {
           if (!res.success) alert(res.message);
         });
       } else if (data.type === 'movie' && folderMediaType === 'MOVIE') {
-        alert('영화 폴더 이동이 곧 지원됩니다.');
+        startTransition(async () => {
+          const res = await updateMovieFolder(data.id, targetFolderId);
+          if (!res.success) alert(res.message);
+        });
+      } else if (data.type === 'anime' && folderMediaType === 'ANIME') {
+        startTransition(async () => {
+          const res = await updateAnimeFolder(data.id, targetFolderId);
+          if (!res.success) alert(res.message);
+        });
       }
     } catch (err) {}
   };
 
-  const renderFolderList = (folderList: Folder[], type: 'BOOK' | 'MOVIE', activeFolderId: string | null, paramKey: string) => {
+  const renderFolderList = (folderList: Folder[], type: 'BOOK' | 'MOVIE' | 'ANIME', activeFolderId: string | null, paramKey: string) => {
     if (folderList.length === 0) return (
       <div style={{ color: 'var(--text-tertiary)', fontSize: '13px', padding: '12px', textAlign: 'center' }}>
         폴더를 추가하세요.
@@ -276,6 +299,45 @@ export default function Sidebar({ folders = [] }: { folders?: Folder[] }) {
               <button onClick={() => handleCreateFolder('MOVIE')} className="focus-ring" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)' }}>+</button>
             </div>
             {renderFolderList(movieFolders, 'MOVIE', activeMovieFolderId, 'movieFolderId')}
+          </section>
+        </div>
+      )}
+
+      {/* ── ANIME 탭 일 때의 사이드바 ── */}
+      {currentTab === 'ANIME' && (
+        <div className="animate-fade-in">
+          <div style={{ padding: '0 16px', marginBottom: '8px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '8px' }}>
+            <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>🌸 애니 컬렉션</h2>
+          </div>
+
+          <section style={{ padding: '0 16px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              {ANIME_STATUS_TABS.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => updateQueryParams({ animeStatus: tab.key === 'ALL' ? null : tab.key })}
+                  className="focus-ring"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px',
+                    borderRadius: 'var(--radius-md)', border: 'none', cursor: 'pointer', fontSize: '13px',
+                    fontWeight: animeStatus === tab.key ? 600 : 400,
+                    color: animeStatus === tab.key ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    backgroundColor: animeStatus === tab.key ? 'rgba(230, 50, 80, 0.15)' : 'transparent',
+                    textAlign: 'left', width: '100%', transition: 'all var(--transition-fast)',
+                  }}
+                >
+                  <span style={{ fontSize: '15px' }}>{tab.icon}</span> {tab.label}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section style={{ padding: '0 16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <h3 style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-tertiary)' }}>애니 폴더</h3>
+              <button onClick={() => handleCreateFolder('ANIME')} className="focus-ring" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)' }}>+</button>
+            </div>
+            {renderFolderList(animeFolders, 'ANIME', activeAnimeFolderId, 'animeFolderId')}
           </section>
         </div>
       )}

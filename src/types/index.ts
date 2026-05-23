@@ -20,6 +20,11 @@ export type {
   Movie,
   UserMovie,
   MovieTag,
+  // ★ 애니 확장 타입
+  AnimeStatus,
+  Anime,
+  UserAnime,
+  AnimeTag,
 } from './database';
 
 // ── 알라딘 타입 re-export ──
@@ -41,6 +46,12 @@ export type {
   TmdbCrewMember,
 } from './tmdb';
 export { TMDB_IMAGE_BASE, TMDB_POSTER_SIZE, TMDB_BACKDROP_SIZE } from './tmdb';
+
+// ── AniList 타입 re-export ──
+export type {
+  AniListSearchResponse,
+  AniListMediaItem,
+} from './anilist';
 
 // ── UI 파생 타입: 서재 도서 + 조인된 상세정보 ──
 // 예시: { id: "abc", isbn: "978...", book: { title: "사피엔스", ... }, folder: { name: "2026 독서" } }
@@ -68,7 +79,7 @@ export interface UserBookWithDetails {
 // ── UI 파생 타입: 큐레이션 아이템 ──
 export interface CurationItem {
   id: string;
-  type: 'BOOK' | 'MOVIE';
+  type: 'BOOK' | 'MOVIE' | 'ANIME';
   title: string;
   creator: string;
   posterUrl: string;
@@ -113,13 +124,13 @@ export interface ContentItem {
 }
 
 // ── 지식 그래프 노드 ──
-export type GraphNodeType = 'book' | 'tag' | 'movie';
+export type GraphNodeType = 'book' | 'tag' | 'movie' | 'anime';
 
 export interface GraphNode {
   id: string;
   type: GraphNodeType;
   label: string;
-  // book/movie 노드 전용
+  // book/movie/anime 노드 전용
   coverUrl?: string;
   dominantColor?: string;
   // tag 노드 전용

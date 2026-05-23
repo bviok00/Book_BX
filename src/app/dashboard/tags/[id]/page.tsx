@@ -53,9 +53,22 @@ export default async function TagDetailPage({
     `)
     .eq('tag_id', tagId);
 
+  // Fetch animes associated with this tag
+  const { data: animeTags } = await supabase
+    .from('anime_tags')
+    .select(`
+      user_animes (
+        *,
+        animes (*)
+      )
+    `)
+    .eq('tag_id', tagId);
+
   const books = bookTags?.map(bt => ({ ...(bt.user_books as any), type: 'BOOK' })).filter(b => b.id) || [];
   const movies = movieTags?.map(mt => ({ ...(mt.user_movies as any), type: 'MOVIE' })).filter(m => m.id) || [];
-  const contents = [...books, ...movies];
+  const animes = animeTags?.map(at => ({ ...(at.user_animes as any), type: 'ANIME' })).filter(a => a.id) || [];
+  
+  const contents = [...books, ...movies, ...animes];
 
   const activeContents = contents.filter(c => c.status === 'READING' || c.status === 'WATCHING');
   const wantContents = contents.filter(c => c.status === 'WANT_TO_READ' || c.status === 'WANT_TO_WATCH');
@@ -85,10 +98,11 @@ export default async function TagDetailPage({
         >
           {groupContents.map((c: any) => {
             const isBook = c.type === 'BOOK';
-            const detailUrl = `/dashboard/${isBook ? 'book' : 'movie'}/${c.id}`;
-            const coverUrl = isBook ? c.books?.cover_url : c.movies?.poster_url;
-            const itemTitle = isBook ? c.books?.title : c.movies?.title;
-            const creator = isBook ? c.books?.author : c.movies?.director;
+            const isMovie = c.type === 'MOVIE';
+            const detailUrl = `/dashboard/${isBook ? 'book' : isMovie ? 'movie' : 'anime'}/${c.id}`;
+            const coverUrl = isBook ? c.books?.cover_url : isMovie ? c.movies?.poster_url : c.animes?.poster_url;
+            const itemTitle = isBook ? c.books?.title : isMovie ? c.movies?.title : c.animes?.title;
+            const creator = isBook ? c.books?.author : isMovie ? c.movies?.director : c.animes?.director;
 
             return (
               <Link key={c.id} href={detailUrl} style={{ textDecoration: 'none' }}>
@@ -98,11 +112,8 @@ export default async function TagDetailPage({
                     title={itemTitle || ''}
                     author={creator || undefined}
                     status={c.status}
-                    dominantColor={c.dominant_color || undefined}
+                    type={c.type}
                   />
-                  <div style={{ position: 'absolute', top: '8px', left: '8px', backgroundColor: 'rgba(0,0,0,0.6)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', color: '#fff', fontWeight: 600, zIndex: 10 }}>
-                    {isBook ? '도서' : '영화'}
-                  </div>
                 </div>
               </Link>
             );

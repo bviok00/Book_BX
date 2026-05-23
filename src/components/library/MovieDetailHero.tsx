@@ -282,9 +282,14 @@ export default function MovieDetailHero({ userMovie, movie, folders = [], isRead
             {/* 폴더 선택 */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginBottom: '4px' }}>폴더</span>
-              <select style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', padding: '8px', borderRadius: '4px' }}>
+              <select 
+                value={optimisticFolderId || 'none'}
+                onChange={handleFolderChange}
+                disabled={isPending}
+                style={{ background: 'rgba(0,0,0,0.4)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', padding: '8px', borderRadius: '4px' }}
+              >
                 <option value="none" style={{ background: '#1a1a1a', color: '#fff' }}>📁 폴더 미지정</option>
-                {folders.map(f => (
+                {folders.filter(f => f.media_type === 'MOVIE').map(f => (
                   <option key={f.id} value={f.id} style={{ background: '#1a1a1a', color: '#fff' }}>{f.name}</option>
                 ))}
               </select>

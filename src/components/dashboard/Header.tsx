@@ -14,7 +14,7 @@ interface HeaderProps {
   profile: Profile | null;
 }
 
-type TabMode = 'HOME' | 'BOOK' | 'MOVIE';
+type TabMode = 'HOME' | 'BOOK' | 'MOVIE' | 'ANIME';
 
 function HeaderContent({ user, profile }: HeaderProps) {
   const router = useRouter();
@@ -71,6 +71,7 @@ function HeaderContent({ user, profile }: HeaderProps) {
               { key: 'HOME', label: '✨ 추천' },
               { key: 'BOOK', label: '📚 도서' },
               { key: 'MOVIE', label: '🎬 영화' },
+              { key: 'ANIME', label: '🌸 애니' },
             ].map(tab => (
               <button
                 key={tab.key}
@@ -100,7 +101,7 @@ function HeaderContent({ user, profile }: HeaderProps) {
         {/* 중앙: 검색바 */}
         <div style={{ flex: 1, maxWidth: '400px', margin: '0 auto' }} onClick={() => setIsSearchOpen(true)}>
           <SearchInput
-            placeholder="도서, 영화 통합 검색..."
+            placeholder="도서, 영화, 애니 통합 검색..."
             style={{ width: '100%', cursor: 'pointer' }}
             readOnly
           />

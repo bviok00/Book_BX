@@ -13,19 +13,20 @@ import { TMDB_IMAGE_BASE, TMDB_POSTER_SIZE } from '@/types/tmdb';
 interface DiscoverySectionProps {
   existingIsbns: string[];
   existingTmdbIds: string[];
-  filterType?: 'BOOK' | 'MOVIE';
+  existingAnilistIds?: string[];
+  filterType?: 'BOOK' | 'MOVIE' | 'ANIME';
 }
 
 interface CurationItem {
   id: string;
-  type: 'BOOK' | 'MOVIE';
+  type: 'BOOK' | 'MOVIE' | 'ANIME';
   title: string;
   creator: string;
   posterUrl: string;
   originalData: any;
 }
 
-export default function DiscoverySection({ existingIsbns, existingTmdbIds, filterType }: DiscoverySectionProps) {
+export default function DiscoverySection({ existingIsbns, existingTmdbIds, existingAnilistIds = [], filterType }: DiscoverySectionProps) {
   const [tags, setTags] = useState<string[]>([]);
   const [recommendations, setRecommendations] = useState<Record<string, CurationItem[]>>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -47,21 +48,25 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, filte
 
           for (const tag of topTags) {
               // 필터에 따라 필요한 API만 요청
-              const fetchBooks = filterType !== 'MOVIE';
-              const fetchMovies = filterType !== 'BOOK';
+              const fetchBooks = !filterType || filterType === 'BOOK';
+              const fetchMovies = !filterType || filterType === 'MOVIE';
+              const fetchAnimes = !filterType || filterType === 'ANIME';
 
               const promises = [];
-              if (fetchBooks) promises.push(fetch(`/api/aladin?query=${encodeURIComponent(tag)}&maxResults=15`));
-              if (fetchMovies) promises.push(fetch(`/api/tmdb?query=${encodeURIComponent(tag)}`));
+              if (fetchBooks) promises.push(fetch(`/api/aladin?query=${encodeURIComponent(tag)}&maxResults=15`).then(res => res.json()).catch(() => ({ success: false, data: { item: [] } })));
+              if (fetchMovies) promises.push(fetch(`/api/tmdb?query=${encodeURIComponent(tag)}`).then(res => res.json()).catch(() => ({ success: false, data: { results: [] } })));
+              if (fetchAnimes) promises.push(fetch(`/api/anilist?query=${encodeURIComponent(tag)}`).then(res => res.json()).catch(() => ({ success: false, data: { results: [] } })));
 
               const resps = await Promise.all(promises);
               
               let bookJson = { success: false, data: { item: [] } };
               let movieJson = { success: false, data: { results: [] } };
+              let animeJson = { success: false, data: { results: [] } };
 
               let i = 0;
-              if (fetchBooks) bookJson = await resps[i++].json();
-              if (fetchMovies) movieJson = await resps[i++].json();
+              if (fetchBooks) bookJson = resps[i++];
+              if (fetchMovies) movieJson = resps[i++];
+              if (fetchAnimes) animeJson = resps[i++];
 
             const items: CurationItem[] = [];
 
@@ -95,6 +100,21 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, filte
               });
             }
 
+            if (animeJson.success && animeJson.data?.results) {
+              animeJson.data.results.slice(0, 15).forEach((a: any) => {
+                if (!existingAnilistIds.includes(String(a.id))) {
+                  items.push({
+                    id: `ANIME_${a.id}`,
+                    type: 'ANIME',
+                    title: a.title?.romaji || a.title?.english || a.title?.native || 'Unknown',
+                    creator: a.title?.native || '',
+                    posterUrl: a.coverImage?.large || a.coverImage?.extraLarge || '',
+                    originalData: a
+                  });
+                }
+              });
+            }
+
             // 필터가 있으면 필터링 후 최대 15개 노출 (한 라인을 가득 채우도록)
             const filteredItems = filterType ? items.filter(i => i.type === filterType) : items;
             newRecs[tag] = filteredItems.slice(0, 15);
@@ -110,7 +130,7 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, filte
     }
 
     loadCuration();
-  }, [existingIsbns, existingTmdbIds]);
+  }, [existingIsbns, existingTmdbIds, existingAnilistIds, filterType]);
 
   const handleAddAndNavigate = async (item: CurationItem) => {
     setAddingId(item.id);
@@ -130,8 +150,9 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, filte
         } else {
           showToast(result.message, 'error');
         }
-      } else {
+      } else if (item.type === 'MOVIE') {
         const m = item.originalData;
+        const { addMovieToLibrary } = await import('@/app/dashboard/movie-actions');
         const result = await addMovieToLibrary(m.id, {
           title: m.title,
           original_title: m.original_title,
@@ -150,9 +171,30 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, filte
         } else {
           showToast(result.message, 'error');
         }
+      } else if (item.type === 'ANIME') {
+        const a = item.originalData;
+        const { addAnimeToLibrary } = await import('@/app/dashboard/anime-actions');
+        const result = await addAnimeToLibrary(a.id, {
+          title: a.title?.romaji || a.title?.english || a.title?.native || 'Unknown',
+          original_title: a.title?.native,
+          director: null,
+          poster_url: item.posterUrl,
+          backdrop_url: a.bannerImage,
+          genre: a.genres?.join(', '),
+          release_date: a.startDate?.year ? `${a.startDate.year}-${String(a.startDate.month || 1).padStart(2, '0')}-${String(a.startDate.day || 1).padStart(2, '0')}` : null,
+          runtime_min: a.duration,
+          overview: a.description,
+          metadata: { episodes: a.episodes, averageScore: a.averageScore }
+        });
+        if (result.success && result.data) {
+          showToast(result.message, 'success');
+          router.push(`/dashboard?tab=ANIME&animeStatus=WANT_TO_WATCH`);
+        } else {
+          showToast(result.message, 'error');
+        }
       }
     } catch (e) {
-      showToast('추가 및 이동 중 오류가 발생했습니다.', 'error');
+      showToast('추가 중 오류가 발생했습니다.', 'error');
     } finally {
       setAddingId(null);
       setPreviewItem(null);
@@ -163,9 +205,12 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, filte
     if (item.type === 'BOOK') {
       const b = item.originalData;
       router.push(`/dashboard/book/${b.isbn13 || b.isbn}`);
-    } else {
+    } else if (item.type === 'MOVIE') {
       const m = item.originalData;
       router.push(`/dashboard/movie/${m.id}`);
+    } else if (item.type === 'ANIME') {
+      const a = item.originalData;
+      router.push(`/dashboard/anime/${a.id}`);
     }
   };
 

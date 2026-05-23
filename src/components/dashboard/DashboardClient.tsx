@@ -14,6 +14,7 @@ type TabMode = 'HOME' | 'BOOK' | 'MOVIE';
 interface DashboardClientProps {
   userBooks: any[];
   userMovies: any[];
+  userAnimes?: any[];
   folders: Folder[];
   readingSessions: ReadingSession[];
 }
@@ -21,6 +22,7 @@ interface DashboardClientProps {
 export default function DashboardClient({
   userBooks,
   userMovies,
+  userAnimes = [],
   folders,
   readingSessions,
 }: DashboardClientProps) {
@@ -28,11 +30,13 @@ export default function DashboardClient({
 
   const router = useRouter();
   const searchParams = useSearchParams();
-  const currentTab = (searchParams.get('tab') as TabMode) || 'HOME';
+  const currentTab = (searchParams.get('tab') as TabMode | 'ANIME') || 'HOME';
   const bookStatus = searchParams.get('bookStatus');
   const movieStatus = searchParams.get('movieStatus');
+  const animeStatus = searchParams.get('animeStatus');
   const bookFolderId = searchParams.get('bookFolderId');
   const movieFolderId = searchParams.get('movieFolderId');
+  const animeFolderId = searchParams.get('animeFolderId');
 
   // 도서 콘텐츠 통합 포맷 변환
   const unifiedBooks: ContentItem[] = useMemo(() => {
@@ -77,6 +81,28 @@ export default function DashboardClient({
     })).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [userMovies]);
 
+  // 애니 콘텐츠 통합 포맷 변환
+  const unifiedAnimes: ContentItem[] = useMemo(() => {
+    return userAnimes.map(ua => ({
+      type: 'ANIME' as const,
+      id: ua.id,
+      contentId: String(ua.anilist_id),
+      title: ua.animes?.title || '제목 없음',
+      creator: ua.animes?.director || null,
+      posterUrl: ua.animes?.poster_url || '',
+      genre: ua.animes?.genre || null,
+      status: ua.status,
+      rating: ua.rating,
+      dominantColor: ua.dominant_color,
+      folderId: ua.folder_id,
+      sortOrder: ua.sort_order,
+      createdAt: ua.created_at,
+      progressPct: ua.progress_pct,
+      runtimeMin: ua.animes?.runtime_min,
+      backdropUrl: ua.animes?.backdrop_url,
+    })).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [userAnimes]);
+
   // 필터링 (도서)
   let filteredBooks = unifiedBooks;
   if (bookStatus && bookStatus !== 'ALL') {
@@ -93,6 +119,15 @@ export default function DashboardClient({
   }
   if (movieFolderId) {
     filteredMovies = filteredMovies.filter(c => c.folderId === movieFolderId);
+  }
+
+  // 필터링 (애니)
+  let filteredAnimes = unifiedAnimes;
+  if (animeStatus && animeStatus !== 'ALL') {
+    filteredAnimes = filteredAnimes.filter(c => c.status === animeStatus);
+  }
+  if (animeFolderId) {
+    filteredAnimes = filteredAnimes.filter(c => c.folderId === animeFolderId);
   }
 
   return (
@@ -135,12 +170,20 @@ export default function DashboardClient({
           <DiscoverySection 
             existingIsbns={unifiedBooks.map(c => c.contentId)} 
             existingTmdbIds={unifiedMovies.map(c => c.contentId)}
+            existingAnilistIds={unifiedAnimes.map(c => c.contentId)}
             filterType="BOOK"
           />
           <DiscoverySection 
             existingIsbns={unifiedBooks.map(c => c.contentId)} 
             existingTmdbIds={unifiedMovies.map(c => c.contentId)}
+            existingAnilistIds={unifiedAnimes.map(c => c.contentId)}
             filterType="MOVIE"
+          />
+          <DiscoverySection 
+            existingIsbns={unifiedBooks.map(c => c.contentId)} 
+            existingTmdbIds={unifiedMovies.map(c => c.contentId)}
+            existingAnilistIds={unifiedAnimes.map(c => c.contentId)}
+            filterType="ANIME"
           />
         </div>
       )}
@@ -178,6 +221,7 @@ export default function DashboardClient({
             <DiscoverySection 
               existingIsbns={unifiedBooks.map(c => c.contentId)} 
               existingTmdbIds={unifiedMovies.map(c => c.contentId)}
+              existingAnilistIds={unifiedAnimes.map(c => c.contentId)}
               filterType="MOVIE"
             />
           )}
@@ -194,6 +238,34 @@ export default function DashboardClient({
             viewMode === 'grid' ? <GridView contents={filteredMovies} router={router} type="MOVIE" /> :
             viewMode === 'list' ? <ListView contents={filteredMovies} router={router} /> :
             <SpineView contents={filteredMovies} router={router} />
+          )}
+          </div>
+        </div>
+      )}
+
+      {currentTab === 'ANIME' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+          {unifiedAnimes.length > 0 && (
+            <DiscoverySection 
+              existingIsbns={unifiedBooks.map(c => c.contentId)} 
+              existingTmdbIds={unifiedMovies.map(c => c.contentId)}
+              existingAnilistIds={unifiedAnimes.map(c => c.contentId)}
+              filterType="ANIME"
+            />
+          )}
+          <div>
+            <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 700 }}>🌸 애니 컬렉션</h2>
+            <span style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>{filteredAnimes.length}개</span>
+          </div>
+          {filteredAnimes.length === 0 ? (
+            <div style={{ padding: '80px', textAlign: 'center', color: 'var(--text-tertiary)' }}>
+              조건에 맞는 애니메이션이 없습니다.
+            </div>
+          ) : (
+            viewMode === 'grid' ? <GridView contents={filteredAnimes} router={router} type="ANIME" /> :
+            viewMode === 'list' ? <ListView contents={filteredAnimes} router={router} /> :
+            <SpineView contents={filteredAnimes} router={router} />
           )}
           </div>
         </div>

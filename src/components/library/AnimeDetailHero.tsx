@@ -231,7 +231,7 @@ export default function AnimeDetailHero({ userAnime, anime, folders = [], isRead
                   isLoading={isAdding}
                   style={{ padding: '12px 32px', fontSize: '16px' }}
                 >
-                  + 서재에 추가
+                  + 위시리스트 추가
                 </Button>
               ) : (
                 <>
@@ -264,42 +264,6 @@ export default function AnimeDetailHero({ userAnime, anime, folders = [], isRead
                     ))}
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginBottom: '4px' }}>폴더</span>
-                    <select 
-                      value={optimisticFolderId || 'none'}
-                      onChange={handleFolderChange}
-                      disabled={isPending}
-                      style={{ background: 'rgba(0,0,0,0.4)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', padding: '8px', borderRadius: '4px' }}
-                    >
-                      <option value="none" style={{ background: '#1a1a1a', color: '#fff' }}>📁 폴더 미지정</option>
-                      {folders.filter(f => f.media_type === 'ANIME').map(f => (
-                        <option key={f.id} value={f.id} style={{ background: '#1a1a1a', color: '#fff' }}>{f.name}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginBottom: '4px' }}>내 평가</span>
-                    <div style={{ display: 'flex', gap: '4px', fontSize: '24px' }}>
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <span
-                          key={star}
-                          onClick={() => handleRatingChange(star)}
-                          style={{
-                            cursor: 'pointer',
-                            color: star <= optimisticRating ? '#FFD700' : 'rgba(255,255,255,0.2)',
-                            transition: 'color 0.2s',
-                            textShadow: star <= optimisticRating ? '0 0 10px rgba(255,215,0,0.5)' : 'none'
-                          }}
-                          className="hover-scale"
-                        >
-                          ★
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '200px' }}>
                     <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginBottom: '4px' }}>
                       진행도 ({optimisticProgress}%)
@@ -317,6 +281,42 @@ export default function AnimeDetailHero({ userAnime, anime, folders = [], isRead
                   </div>
                 </>
               )}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginBottom: '4px' }}>폴더</span>
+              <select 
+                value={optimisticFolderId || 'none'}
+                onChange={handleFolderChange}
+                disabled={isPending}
+                style={{ background: 'rgba(0,0,0,0.4)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', padding: '8px', borderRadius: '4px' }}
+              >
+                <option value="none" style={{ background: '#1a1a1a', color: '#fff' }}>📁 폴더 미지정</option>
+                {folders.filter(f => f.media_type === 'ANIME').map(f => (
+                  <option key={f.id} value={f.id} style={{ background: '#1a1a1a', color: '#fff' }}>{f.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginBottom: '4px' }}>내 평가</span>
+              <div style={{ display: 'flex', gap: '4px', fontSize: '24px' }}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <span
+                    key={star}
+                    onClick={() => handleRatingChange(star)}
+                    style={{
+                      cursor: 'pointer',
+                      color: star <= optimisticRating ? '#FFD700' : 'rgba(255,255,255,0.2)',
+                      transition: 'color 0.2s',
+                      textShadow: star <= optimisticRating ? '0 0 10px rgba(255,215,0,0.5)' : 'none'
+                    }}
+                    className="hover-scale"
+                  >
+                    ★
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
         </div>

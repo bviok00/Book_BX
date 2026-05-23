@@ -74,6 +74,9 @@ export async function GET(request: Request) {
     });
 
     if (!res.ok) {
+      if (res.status === 429) {
+        return NextResponse.json({ success: false, message: 'AniList API 요청이 너무 많습니다. 잠시 후 다시 시도해주세요. (429)' }, { status: 429 });
+      }
       throw new Error(`AniList API 에러: ${res.status}`);
     }
 

@@ -50,7 +50,7 @@ export default function MovieMediaSection({ videos, images }: MovieMediaSectionP
           {backdrops.map((img, idx) => (
             <div key={idx} className="card-glow" style={{ borderRadius: 'var(--radius-md)', overflow: 'hidden', aspectRatio: '16/9', backgroundColor: 'var(--bg-card)' }}>
               <img 
-                src={`https://image.tmdb.org/t/p/w500${img.file_path}`} 
+                src={img.file_path?.startsWith('http') ? img.file_path : `https://image.tmdb.org/t/p/w500${img.file_path}`} 
                 alt={`스틸컷 ${idx + 1}`}
                 style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.3s ease' }}
                 onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}

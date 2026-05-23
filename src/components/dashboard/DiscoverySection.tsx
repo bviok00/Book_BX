@@ -101,8 +101,9 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
               });
             }
 
-            if (animeJson.success && animeJson.data?.results) {
-              animeJson.data.results.slice(0, 15).forEach((a: any) => {
+            const animeMedia = animeJson.data?.data?.Page?.media || [];
+            if (animeJson.success && animeMedia.length > 0) {
+              animeMedia.slice(0, 15).forEach((a: any) => {
                 if (!existingAnilistIds.includes(String(a.id))) {
                   items.push({
                     id: `ANIME_${a.id}`,

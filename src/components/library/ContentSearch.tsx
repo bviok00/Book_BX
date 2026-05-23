@@ -237,9 +237,9 @@ export default function ContentSearch({ isOpen, onClose, folderId }: ContentSear
     }
   };
 
-  const renderBookItem = (book: AladinBookItem) => (
+  const renderBookItem = (book: AladinBookItem, index: number) => (
     <div
-      key={book.isbn13}
+      key={book.isbn13 || book.isbn || String(index)}
       onClick={() => {
         onClose();
         router.push(`/dashboard/book/${book.isbn13 || book.isbn}`);

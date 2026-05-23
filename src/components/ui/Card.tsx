@@ -60,25 +60,31 @@ export default function Card({
   );
 }
 
-// ── 포스터 카드: 책 표지 전용 (책 이미지 + 제목 오버레이) ──
+// ── 포스터 카드: 책/영화 표지 전용 (이미지 + 제목 오버레이 + 호버 액션) ──
 interface PosterCardProps {
+  type?: 'BOOK' | 'MOVIE';
   coverUrl: string;
   title: string;
   author?: string;
   status?: string;
   dominantColor?: string;
+  progressPct?: number;
   onClick?: () => void;
   aspectRatio?: string;
+  rating?: number | null;
 }
 
 export function PosterCard({
+  type = 'BOOK',
   coverUrl,
   title,
   author,
   status,
   dominantColor,
+  progressPct,
   onClick,
   aspectRatio = '2/3',
+  rating,
 }: PosterCardProps) {
   return (
     <div
@@ -91,7 +97,7 @@ export function PosterCard({
           onClick();
         }
       }}
-      className="focus-ring card-glow"
+      className="focus-ring card-glow poster-card-container"
       style={{
         position: 'relative',
         aspectRatio,
@@ -105,9 +111,19 @@ export function PosterCard({
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = 'scale(1.05)';
+        const overlay = e.currentTarget.querySelector('.hover-overlay') as HTMLElement;
+        if (overlay) {
+          overlay.style.opacity = '1';
+          overlay.style.transform = 'translateY(0)';
+        }
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.transform = 'scale(1)';
+        const overlay = e.currentTarget.querySelector('.hover-overlay') as HTMLElement;
+        if (overlay) {
+          overlay.style.opacity = '0';
+          overlay.style.transform = 'translateY(8px)';
+        }
       }}
     >
       {/* 표지 이미지 */}
@@ -129,8 +145,11 @@ export function PosterCard({
           bottom: 0,
           left: 0,
           right: 0,
-          padding: '24px 12px 12px',
+          padding: '32px 12px 12px', // hover overlay를 위해 여백 확보
           background: 'linear-gradient(transparent, rgba(0,0,0,0.8))',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '4px'
         }}
       >
         <p
@@ -150,15 +169,50 @@ export function PosterCard({
             style={{
               color: 'rgba(255,255,255,0.7)',
               fontSize: '11px',
-              marginTop: '2px',
             }}
           >
             {author}
           </p>
         )}
+        
+        {/* 영화 시청 진행도 바 (Watcha Style) */}
+        {type === 'MOVIE' && progressPct !== undefined && progressPct > 0 && (
+          <div style={{ width: '100%', height: '3px', backgroundColor: 'rgba(255,255,255,0.3)', borderRadius: '2px', marginTop: '4px', overflow: 'hidden' }}>
+            <div style={{ width: `${progressPct}%`, height: '100%', backgroundColor: 'var(--accent)', transition: 'width 0.3s ease' }} />
+          </div>
+        )}
       </div>
 
-      {/* 상태 뱃지 */}
+      {/* Hover Action Overlay */}
+      <div
+        className="hover-overlay"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          backgroundColor: 'rgba(0,0,0,0.4)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          opacity: 0,
+          transform: 'translateY(8px)',
+          transition: 'all 0.2s ease-out',
+          backdropFilter: 'blur(2px)'
+        }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+          {rating ? (
+            <span style={{ color: '#FFD700', fontSize: '14px', marginBottom: '4px' }}>
+              {'★'.repeat(rating)}
+            </span>
+          ) : null}
+          <span style={{ color: '#fff', fontSize: '12px', fontWeight: 600, border: '1px solid rgba(255,255,255,0.5)', padding: '6px 12px', borderRadius: '20px', backgroundColor: 'rgba(0,0,0,0.3)' }}>
+            상세 보기
+          </span>
+        </div>
+      </div>
+
+      {/* 상태 뱃지 (도서만 표시하거나 상태값 있으면 표시) */}
       {status && (
         <div
           style={{
@@ -181,6 +235,8 @@ function StatusDot({ status }: { status: string }) {
     READING: 'var(--status-reading)',
     COMPLETED: 'var(--status-completed)',
     DROPPED: 'var(--status-dropped)',
+    WANT_TO_WATCH: 'var(--status-want)',
+    WATCHING: 'var(--status-reading)',
   };
 
   return (

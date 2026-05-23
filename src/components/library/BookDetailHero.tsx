@@ -2,11 +2,11 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { updateBookStatus, updateBookRating, updateBookFolder } from '@/app/dashboard/actions';
+import { updateBookStatus, updateBookRating, updateBookFolder, deleteUserBook } from '@/app/dashboard/actions';
 import type { BookStatus } from '@/types';
 import { StatusBadge } from '@/components/ui/Badge';
 
-export default function BookDetailHero({ userBook, book, folders = [] }: { userBook: any, book: any, folders?: any[] }) {
+export default function BookDetailHero({ userBook, book, folders = [], isReadOnly = false }: { userBook: any, book: any, folders?: any[], isReadOnly?: boolean }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [optimisticStatus, setOptimisticStatus] = useState<BookStatus>(userBook.status);
@@ -14,6 +14,20 @@ export default function BookDetailHero({ userBook, book, folders = [] }: { userB
   const [optimisticFolderId, setOptimisticFolderId] = useState<string | null>(userBook.folder_id || null);
 
   const handleStatusChange = (newStatus: BookStatus) => {
+    if (optimisticStatus === newStatus) {
+      if (window.confirm('현재 상태를 취소하고 서재에서 완전히 삭제하시겠습니까?')) {
+        startTransition(async () => {
+          const res = await deleteUserBook(userBook.id);
+          if (res.success) {
+            router.push('/dashboard?tab=BOOK');
+          } else {
+            alert(res.message);
+          }
+        });
+      }
+      return;
+    }
+
     setOptimisticStatus(newStatus);
     startTransition(async () => {
       await updateBookStatus(userBook.id, newStatus);
@@ -21,6 +35,7 @@ export default function BookDetailHero({ userBook, book, folders = [] }: { userB
   };
 
   const handleRatingChange = (clickedRating: number) => {
+    if (isReadOnly) return;
     const newRating = optimisticRating === clickedRating ? 0 : clickedRating;
     setOptimisticRating(newRating);
     startTransition(async () => {
@@ -34,6 +49,19 @@ export default function BookDetailHero({ userBook, book, folders = [] }: { userB
     startTransition(async () => {
       await updateBookFolder(userBook.id, newFolderId);
     });
+  };
+
+  const handleDelete = () => {
+    if (window.confirm('위시리스트(서재)에서 이 도서를 완전히 삭제하시겠습니까?')) {
+      startTransition(async () => {
+        const res = await deleteUserBook(userBook.id);
+        if (res.success) {
+          router.push('/dashboard');
+        } else {
+          alert(res.message);
+        }
+      });
+    }
   };
 
   return (
@@ -74,27 +102,21 @@ export default function BookDetailHero({ userBook, book, folders = [] }: { userB
       {/* 뒤로가기 버튼 */}
       <button 
         onClick={() => router.push('/dashboard')}
-        style={{
-          position: 'absolute',
-          top: '32px',
-          left: '32px',
-          zIndex: 10,
-          background: 'rgba(0,0,0,0.5)',
-          border: '1px solid rgba(255,255,255,0.2)',
-          borderRadius: '50%',
-          width: '40px',
-          height: '40px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#fff',
-          cursor: 'pointer',
-          backdropFilter: 'blur(10px)',
-          fontSize: '20px'
-        }}
+        style={{ position: 'absolute', top: '32px', left: '32px', zIndex: 10, background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: 'pointer', backdropFilter: 'blur(10px)', fontSize: '20px' }}
         className="hover-scale"
       >
         ←
+      </button>
+
+      {/* 삭제 버튼 */}
+      <button 
+        onClick={handleDelete}
+        disabled={isPending}
+        style={{ position: 'absolute', top: '32px', right: '32px', zIndex: 10, background: 'rgba(255,50,50,0.2)', border: '1px solid rgba(255,50,50,0.4)', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffaaaa', cursor: 'pointer', backdropFilter: 'blur(10px)', fontSize: '18px' }}
+        className="hover-scale"
+        title="서재에서 삭제"
+      >
+        🗑️
       </button>
 
       {/* 컨텐츠 컨테이너 */}
@@ -154,56 +176,103 @@ export default function BookDetailHero({ userBook, book, folders = [] }: { userB
             {book.author} · {book.publisher}
           </p>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '32px', 
+            width: 'fit-content' 
+          }}>
             {/* 상태 변경 버튼들 */}
             <div style={{ display: 'flex', gap: '8px' }}>
-              {(['WANT_TO_READ', 'READING', 'COMPLETED'] as BookStatus[]).map((status) => (
-                <button
-                  key={status}
-                  disabled={isPending}
-                  onClick={() => handleStatusChange(status)}
+              
+              {isReadOnly ? (
+                <button 
+                  onClick={() => {
+                    startTransition(async () => {
+                      const { addBookToLibrary } = await import('@/app/dashboard/actions');
+                      const res = await addBookToLibrary(book.isbn, {
+                        title: book.title,
+                        author: book.author,
+                        publisher: book.publisher,
+                        cover_url: book.cover_url,
+                        category: book.category,
+                        aladin_toc: book.aladin_toc
+                      });
+                      if (res.success && res.data) {
+                        router.refresh();
+                      } else {
+                        alert(res.message);
+                      }
+                    });
+                  }}
                   style={{
                     padding: '10px 18px',
                     borderRadius: 'var(--radius-md)',
-                    border: optimisticStatus === status ? 'none' : '1px solid rgba(255,255,255,0.3)',
-                    background: optimisticStatus === status ? 'var(--accent)' : 'transparent',
-                    color: optimisticStatus === status ? '#fff' : 'rgba(255,255,255,0.8)',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    backdropFilter: 'blur(5px)',
+                    border: 'none',
+                    backgroundColor: 'var(--accent)',
+                    color: '#000',
+                    fontWeight: 700,
+                    cursor: isPending ? 'wait' : 'pointer',
+                    opacity: isPending ? 0.7 : 1,
                     transition: 'all 0.2s',
-                    opacity: isPending ? 0.7 : 1
+                    whiteSpace: 'nowrap'
                   }}
                   className="hover-scale"
                 >
-                  {status === 'WANT_TO_READ' ? '읽고 싶어요' : status === 'READING' ? '읽는 중' : '완독'}
+                  {isPending ? '추가 중...' : '+ 서재(위시리스트)에 추가'}
                 </button>
-              ))}
+              ) : (
+                <>
+                  {(['WANT_TO_READ', 'READING', 'COMPLETED'] as BookStatus[]).map((status) => (
+                    <button
+                      key={status}
+                      disabled={isPending}
+                      onClick={() => handleStatusChange(status)}
+                      style={{
+                        padding: '10px 18px',
+                        borderRadius: 'var(--radius-md)',
+                        border: optimisticStatus === status ? 'none' : '1px solid rgba(255,255,255,0.3)',
+                        background: optimisticStatus === status ? 'var(--accent)' : 'transparent',
+                        color: optimisticStatus === status ? '#fff' : 'rgba(255,255,255,0.8)',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        backdropFilter: 'blur(5px)',
+                        transition: 'all 0.2s',
+                        opacity: isPending ? 0.7 : 1,
+                        whiteSpace: 'nowrap'
+                      }}
+                      className="hover-scale"
+                    >
+                      {status === 'WANT_TO_READ' ? '위시리스트' : status === 'READING' ? '읽는 중' : '완독'}
+                    </button>
+                  ))}
 
-              {/* 폴더 선택 드롭다운 */}
-              <select
-                value={optimisticFolderId || 'none'}
-                onChange={handleFolderChange}
-                disabled={isPending}
-                style={{
-                  padding: '10px 16px',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid rgba(255,255,255,0.3)',
-                  background: 'rgba(0,0,0,0.4)',
-                  color: 'rgba(255,255,255,0.9)',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  backdropFilter: 'blur(5px)',
-                  transition: 'all 0.2s',
-                  outline: 'none',
-                  opacity: isPending ? 0.7 : 1
-                }}
-              >
-                <option value="none">📁 폴더 미지정</option>
-                {folders.map(f => (
-                  <option key={f.id} value={f.id}>{f.name}</option>
-                ))}
-              </select>
+                  {/* 폴더 선택 드롭다운 */}
+                  <select
+                    value={optimisticFolderId || 'none'}
+                    onChange={handleFolderChange}
+                    disabled={isPending}
+                    style={{
+                      padding: '10px 16px',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid rgba(255,255,255,0.3)',
+                      background: 'rgba(0,0,0,0.4)',
+                      color: 'rgba(255,255,255,0.9)',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      backdropFilter: 'blur(5px)',
+                      transition: 'all 0.2s',
+                      outline: 'none',
+                      opacity: isPending ? 0.7 : 1
+                    }}
+                  >
+                    <option value="none" style={{ background: '#1a1a1a', color: '#fff' }}>📁 폴더 미지정</option>
+                    {folders.map(f => (
+                      <option key={f.id} value={f.id} style={{ background: '#1a1a1a', color: '#fff' }}>{f.name}</option>
+                    ))}
+                  </select>
+                </>
+              )}
             </div>
 
             {/* 별점 평가 */}

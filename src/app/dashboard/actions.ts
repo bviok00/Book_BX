@@ -112,7 +112,7 @@ export async function addBookToLibrary(
     aladin_toc?: unknown;
   },
   folderId?: string
-): Promise<ActionResponse> {
+): Promise<ActionResponse<string>> {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -138,23 +138,42 @@ export async function addBookToLibrary(
     }
 
     // 2. user_books에 추가
-    const { error } = await supabase.from('user_books').insert({
+    const { data: newUserBook, error } = await supabase.from('user_books').insert({
       user_id: user.id,
       isbn,
       folder_id: folderId || null,
       status: 'WANT_TO_READ',
-    });
+    }).select('id').single();
 
     if (error) {
       if (error.code === '23505') {
+        // 이미 존재하면 ID 가져오기
+        const { data: existing } = await supabase.from('user_books').select('id').eq('user_id', user.id).eq('isbn', isbn).single();
+        if (existing) {
+          return { success: true, message: '이미 서재에 있는 도서입니다.', data: existing.id };
+        }
         return { success: false, message: '이미 서재에 추가된 도서입니다.' };
       }
       return { success: false, message: `도서 추가 실패: ${error.message}` };
     }
 
+    // 3. 카테고리 정보로 자동 태그 생성
+    if (newUserBook && bookData.category) {
+      // 예: "국내도서>소설/시/희곡>한국소설" -> ["국내도서", "소설", "시", "희곡", "한국소설"]
+      const tagsToCreate = bookData.category
+        .split(/[>/,]/)
+        .map(t => t.trim())
+        .filter(t => t.length > 0 && t !== '국내도서' && t !== '외국도서'); // 너무 흔한 대분류 제외
+      
+      if (tagsToCreate.length > 0) {
+        // 백그라운드 처리를 위해 await 하지 않거나, 빠른 처리를 위해 await (보통 태그 추가는 빠름)
+        await addBookTags(newUserBook.id, tagsToCreate);
+      }
+    }
+
     revalidatePath('/dashboard');
     revalidatePath('/profile');
-    return { success: true, message: '서재에 추가되었습니다.' };
+    return { success: true, message: '서재에 추가되었습니다.', data: newUserBook?.id };
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : '알 수 없는 오류';
     return { success: false, message: msg };
@@ -447,7 +466,7 @@ export async function getUserTags() {
 }
 
 // ── 폴더 관련 액션 ──
-export async function createFolder(name: string): Promise<ActionResponse> {
+export async function createFolder(name: string, mediaType: 'BOOK' | 'MOVIE' = 'BOOK'): Promise<ActionResponse> {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -457,6 +476,7 @@ export async function createFolder(name: string): Promise<ActionResponse> {
       .from('folders')
       .select('sort_order')
       .eq('user_id', user.id)
+      .eq('media_type', mediaType)
       .order('sort_order', { ascending: false })
       .limit(1)
       .single();
@@ -467,6 +487,7 @@ export async function createFolder(name: string): Promise<ActionResponse> {
       user_id: user.id,
       name,
       sort_order: nextOrder,
+      media_type: mediaType,
     });
 
     if (error) return { success: false, message: `폴더 생성 실패: ${error.message}` };
@@ -510,6 +531,30 @@ export async function updateFolderOrder(updates: { id: string, sort_order: numbe
 
     revalidatePath('/dashboard');
     return { success: true, message: '폴더 순서가 저장되었습니다.' };
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : '알 수 없는 오류';
+    return { success: false, message: msg };
+  }
+}
+
+// ── 내 서재에서 도서 삭제 (위시리스트 삭제) ──
+export async function deleteUserBook(userBookId: string): Promise<ActionResponse> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, message: '인증이 필요합니다.' };
+
+    const { error } = await supabase
+      .from('user_books')
+      .delete()
+      .eq('id', userBookId)
+      .eq('user_id', user.id);
+
+    if (error) return { success: false, message: `도서 삭제 실패: ${error.message}` };
+
+    revalidatePath('/dashboard');
+    revalidatePath('/profile');
+    return { success: true, message: '서재에서 삭제되었습니다.' };
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : '알 수 없는 오류';
     return { success: false, message: msg };

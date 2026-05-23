@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { addBookTags } from '@/app/dashboard/actions';
+import { addMovieTags } from '@/app/dashboard/movie-actions';
 
-export default function BookTagsEditor({ userBookId, initialTags = [], isReadOnly = false }: { userBookId: string, initialTags: any[], isReadOnly?: boolean }) {
+export default function MovieTagsEditor({ userMovieId, initialTags = [], isReadOnly = false }: { userMovieId: string, initialTags: any[], isReadOnly?: boolean }) {
   const [tagsInput, setTagsInput] = useState('');
   const [isPending, startTransition] = useTransition();
 
@@ -17,7 +17,7 @@ export default function BookTagsEditor({ userBookId, initialTags = [], isReadOnl
       const tagsArray = tagsInput.split(',').map(t => t.trim()).filter(Boolean);
       if (tagsArray.length === 0) return;
 
-      const res = await addBookTags(userBookId, tagsArray);
+      const res = await addMovieTags(userMovieId, tagsArray);
       if (res.success) {
         setTagsInput('');
       } else {
@@ -29,16 +29,16 @@ export default function BookTagsEditor({ userBookId, initialTags = [], isReadOnl
   return (
     <div className="glass-card" style={{ padding: '24px', marginBottom: '24px' }}>
       <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '16px' }}>
-        도서 지식 성단 (태그)
+        영화 지식 성단 (태그)
       </h3>
       
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
         {initialTags.length === 0 ? (
           <span style={{ fontSize: '13px', color: 'var(--text-tertiary)' }}>등록된 태그가 없습니다.</span>
         ) : (
-          initialTags.map((bt: any, idx: number) => (
+          initialTags.map((mt: any, idx: number) => (
             <span key={idx} 
-              onClick={() => window.location.href = `/dashboard/tags/${bt.tag_id}`}
+              onClick={() => window.location.href = `/dashboard/tags/${mt.tag_id}`}
               style={{
               fontSize: '12px',
               backgroundColor: 'var(--bg-secondary)',
@@ -49,7 +49,7 @@ export default function BookTagsEditor({ userBookId, initialTags = [], isReadOnl
               fontWeight: 500,
               cursor: 'pointer'
             }}>
-              #{bt.tags?.name}
+              #{mt.tags?.name}
             </span>
           ))
         )}

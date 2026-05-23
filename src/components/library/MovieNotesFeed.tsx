@@ -1,15 +1,15 @@
 'use client';
 
 import { useState, useTransition, useRef, useEffect } from 'react';
-import { createNote, updateNote, deleteNote } from '@/app/dashboard/actions';
+import { createMovieNote, updateMovieNote, deleteMovieNote } from '@/app/dashboard/movie-actions';
 import { useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-export default function BookNotesFeed({ userBookId, notes, user }: { userBookId: string, notes: any[], user: any }) {
+export default function MovieNotesFeed({ userMovieId, notes, user }: { userMovieId: string, notes: any[], user: any }) {
   const router = useRouter();
   const [content, setContent] = useState('');
-  const [page, setPage] = useState('');
+  const [page, setPage] = useState(''); // Here page acts as timeReference, e.g. "01:23:45"
   const [tagsInput, setTagsInput] = useState('');
   const [isPending, startTransition] = useTransition();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -32,9 +32,9 @@ export default function BookNotesFeed({ userBookId, notes, user }: { userBookId:
     if (!content.trim()) return;
 
     startTransition(async () => {
-      const pageRefStr = page.trim() ? `p.${page.trim()}` : undefined;
+      const timeRefStr = page.trim() ? page.trim() : undefined;
       const tagsArray = tagsInput.split(',').map(t => t.trim()).filter(Boolean);
-      const res = await createNote(userBookId, content, undefined, pageRefStr, tagsArray.length > 0 ? tagsArray : undefined);
+      const res = await createMovieNote(userMovieId, content, timeRefStr, tagsArray.length > 0 ? tagsArray : undefined);
       if (res.success) {
         setContent('');
         setPage('');
@@ -48,7 +48,7 @@ export default function BookNotesFeed({ userBookId, notes, user }: { userBookId:
   const handleDelete = (noteId: string) => {
     if (!window.confirm('정말 삭제하시겠습니까?')) return;
     startTransition(async () => {
-      const res = await deleteNote(noteId);
+      const res = await deleteMovieNote(noteId);
       if (!res.success) alert(res.message);
     });
   };
@@ -61,7 +61,7 @@ export default function BookNotesFeed({ userBookId, notes, user }: { userBookId:
   const handleSaveEdit = (noteId: string) => {
     if (!editContent.trim()) return;
     startTransition(async () => {
-      const res = await updateNote(noteId, editContent);
+      const res = await updateMovieNote(noteId, editContent);
       if (res.success) {
         setEditingNoteId(null);
       } else {
@@ -94,7 +94,7 @@ export default function BookNotesFeed({ userBookId, notes, user }: { userBookId:
             ref={textareaRef}
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="이 책에 대한 생각이나 기억에 남는 문구를 남겨보세요..."
+            placeholder="이 영화에 대한 생각이나 기억에 남는 장면을 남겨보세요..."
             disabled={isPending}
             style={{
               width: '100%',
@@ -110,14 +110,14 @@ export default function BookNotesFeed({ userBookId, notes, user }: { userBookId:
           />
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '13px', color: 'var(--text-tertiary)', fontWeight: 600 }}>P.</span>
+              <span style={{ fontSize: '13px', color: 'var(--text-tertiary)', fontWeight: 600 }}>⏱️</span>
               <input
-                type="number"
-                placeholder="페이지"
+                type="text"
+                placeholder="타임라인 (예: 1:23)"
                 value={page}
                 onChange={(e) => setPage(e.target.value)}
                 style={{
-                  width: '60px',
+                  width: '100px',
                   background: 'transparent',
                   border: 'none',
                   borderBottom: '1px solid var(--border-subtle)',

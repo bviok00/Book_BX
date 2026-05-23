@@ -42,15 +42,28 @@ export default async function TagDetailPage({
     `)
     .eq('tag_id', tagId);
 
-  const books = bookTags?.map(bt => bt.user_books).filter(Boolean) || [];
+  // Fetch movies associated with this tag
+  const { data: movieTags } = await supabase
+    .from('movie_tags')
+    .select(`
+      user_movies (
+        *,
+        movies (*)
+      )
+    `)
+    .eq('tag_id', tagId);
 
-  const readingBooks = books.filter((ub: any) => ub.status === 'READING');
-  const wantToReadBooks = books.filter((ub: any) => ub.status === 'WANT_TO_READ');
-  const completedBooks = books.filter((ub: any) => ub.status === 'COMPLETED');
-  const abandonedBooks = books.filter((ub: any) => ub.status === 'ABANDONED');
+  const books = bookTags?.map(bt => ({ ...(bt.user_books as any), type: 'BOOK' })).filter(b => b.id) || [];
+  const movies = movieTags?.map(mt => ({ ...(mt.user_movies as any), type: 'MOVIE' })).filter(m => m.id) || [];
+  const contents = [...books, ...movies];
 
-  const renderBookGrid = (title: string, icon: string, groupBooks: any[]) => {
-    if (groupBooks.length === 0) return null;
+  const activeContents = contents.filter(c => c.status === 'READING' || c.status === 'WATCHING');
+  const wantContents = contents.filter(c => c.status === 'WANT_TO_READ' || c.status === 'WANT_TO_WATCH');
+  const completedContents = contents.filter(c => c.status === 'COMPLETED');
+  const droppedContents = contents.filter(c => c.status === 'DROPPED');
+
+  const renderContentGrid = (title: string, icon: string, groupContents: any[]) => {
+    if (groupContents.length === 0) return null;
     return (
       <section>
         <h2
@@ -61,7 +74,7 @@ export default async function TagDetailPage({
             marginBottom: '12px',
           }}
         >
-          {icon} {title} <span style={{ fontSize: '13px', color: 'var(--text-tertiary)', fontWeight: 400 }}>{groupBooks.length}</span>
+          {icon} {title} <span style={{ fontSize: '13px', color: 'var(--text-tertiary)', fontWeight: 400 }}>{groupContents.length}</span>
         </h2>
         <div
           style={{
@@ -70,17 +83,30 @@ export default async function TagDetailPage({
             gap: '16px',
           }}
         >
-          {groupBooks.map((ub: any) => (
-            <Link key={ub.id} href={`/dashboard/book/${ub.id}`} style={{ textDecoration: 'none' }}>
-              <PosterCard
-                coverUrl={ub.books?.cover_url || ''}
-                title={ub.books?.title || ''}
-                author={ub.books?.author || undefined}
-                status={ub.status}
-                dominantColor={ub.dominant_color || undefined}
-              />
-            </Link>
-          ))}
+          {groupContents.map((c: any) => {
+            const isBook = c.type === 'BOOK';
+            const detailUrl = `/dashboard/${isBook ? 'book' : 'movie'}/${c.id}`;
+            const coverUrl = isBook ? c.books?.cover_url : c.movies?.poster_url;
+            const itemTitle = isBook ? c.books?.title : c.movies?.title;
+            const creator = isBook ? c.books?.author : c.movies?.director;
+
+            return (
+              <Link key={c.id} href={detailUrl} style={{ textDecoration: 'none' }}>
+                <div style={{ position: 'relative' }}>
+                  <PosterCard
+                    coverUrl={coverUrl || ''}
+                    title={itemTitle || ''}
+                    author={creator || undefined}
+                    status={c.status}
+                    dominantColor={c.dominant_color || undefined}
+                  />
+                  <div style={{ position: 'absolute', top: '8px', left: '8px', backgroundColor: 'rgba(0,0,0,0.6)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', color: '#fff', fontWeight: 600, zIndex: 10 }}>
+                    {isBook ? '도서' : '영화'}
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </section>
     );
@@ -113,20 +139,20 @@ export default async function TagDetailPage({
           {tag.name}
         </h1>
         <span style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>
-          {books.length}권의 도서
+          {contents.length}개의 작품
         </span>
       </div>
 
-      {books.length === 0 ? (
+      {contents.length === 0 ? (
         <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '15px' }}>
-          이 태그가 달린 도서가 없습니다.
+          이 태그가 달린 도서나 영화가 없습니다.
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-          {renderBookGrid('읽는 중', '📘', readingBooks)}
-          {renderBookGrid('읽고 싶은', '💜', wantToReadBooks)}
-          {renderBookGrid('완독', '✅', completedBooks)}
-          {renderBookGrid('중단', '⏹️', abandonedBooks)}
+          {renderContentGrid('진행 중', '🔥', activeContents)}
+          {renderContentGrid('위시리스트', '💜', wantContents)}
+          {renderContentGrid('완료', '✅', completedContents)}
+          {renderContentGrid('중단', '⏹️', droppedContents)}
         </div>
       )}
     </div>

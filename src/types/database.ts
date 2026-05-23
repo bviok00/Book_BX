@@ -21,6 +21,7 @@ export interface Folder {
   user_id: string;
   name: string;
   sort_order: number;
+  media_type: 'BOOK' | 'MOVIE';
   created_at: string;
 }
 
@@ -108,5 +109,52 @@ export interface BookTag {
 // ── 10. 메모↔태그 관계 ──
 export interface NoteTag {
   note_id: string;
+  tag_id: string;
+}
+
+// ── 콘텐츠 유형 구분자 ──
+export type ContentType = 'BOOK' | 'MOVIE';
+
+// ── 영화 상태 4-State Machine ──
+export type MovieStatus = 'WANT_TO_WATCH' | 'WATCHING' | 'COMPLETED' | 'DROPPED';
+
+// ── 11. 마스터 영화 (TMDB API 캐싱 풀) ──
+export interface Movie {
+  tmdb_id: number;               // PK (TMDB 고유 ID)
+  title: string;
+  original_title: string | null;
+  director: string | null;
+  poster_url: string | null;
+  backdrop_url: string | null;
+  genre: string | null;          // 쉼표 구분 장르 문자열
+  release_date: string | null;   // "2026-01-15" 형식
+  runtime_min: number | null;    // 러닝타임 (분)
+  overview: string | null;
+  // 예시: { "cast": ["배우A","배우B"], "vote_average": 8.2 }
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+// ── 12. 내 영화관 (유저×영화 관계) ──
+export interface UserMovie {
+  id: string;
+  user_id: string;
+  tmdb_id: number;
+  folder_id: string | null;
+  status: MovieStatus;
+  progress_pct: number;          // 시청 진행도 0~100
+  rating: number | null;         // 1~5
+  summary_note: string | null;
+  dominant_color: string | null;
+  sort_order: number;
+  started_at: string | null;
+  finished_at: string | null;
+  updated_at: string;
+  created_at: string;
+}
+
+// ── 13. 영화↔태그 관계 ──
+export interface MovieTag {
+  user_movie_id: string;
   tag_id: string;
 }

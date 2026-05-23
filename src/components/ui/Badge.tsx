@@ -1,22 +1,26 @@
 'use client';
 // 독서 상태 뱃지 + 태그 뱃지 컴포넌트
 
-import type { BookStatus } from '@/types';
+import type { BookStatus, MovieStatus } from '@/types';
 
 interface StatusBadgeProps {
-  status: BookStatus;
+  status: BookStatus | MovieStatus;
   size?: 'sm' | 'md';
+  type?: 'BOOK' | 'MOVIE';
 }
 
-const STATUS_CONFIG: Record<BookStatus, { label: string; className: string }> = {
-  WANT_TO_READ: { label: '읽고 싶은', className: 'status-bg-want' },
+const STATUS_CONFIG: Record<string, { label: string; movieLabel?: string; className: string }> = {
+  WANT_TO_READ: { label: '위시리스트', className: 'status-bg-want' },
+  WANT_TO_WATCH: { label: '위시리스트', className: 'status-bg-want' },
   READING: { label: '읽는 중', className: 'status-bg-reading' },
-  COMPLETED: { label: '완독', className: 'status-bg-completed' },
+  WATCHING: { label: '보는 중', className: 'status-bg-reading' },
+  COMPLETED: { label: '완독', movieLabel: '시청 완료', className: 'status-bg-completed' },
   DROPPED: { label: '중단', className: 'status-bg-dropped' },
 };
 
-export function StatusBadge({ status, size = 'sm' }: StatusBadgeProps) {
-  const config = STATUS_CONFIG[status];
+export function StatusBadge({ status, size = 'sm', type = 'BOOK' }: StatusBadgeProps) {
+  const config = STATUS_CONFIG[status as string] || STATUS_CONFIG['WANT_TO_READ'];
+  const displayLabel = type === 'MOVIE' && config.movieLabel ? config.movieLabel : config.label;
 
   return (
     <span
@@ -31,7 +35,7 @@ export function StatusBadge({ status, size = 'sm' }: StatusBadgeProps) {
         whiteSpace: 'nowrap',
       }}
     >
-      {config.label}
+      {displayLabel}
     </span>
   );
 }

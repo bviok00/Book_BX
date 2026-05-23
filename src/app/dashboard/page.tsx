@@ -8,15 +8,21 @@ export default async function DashboardPage() {
 
   if (!user) return null;
 
-  // Promise.all 병렬 페칭 — 서재 도서 + 폴더 + 독서 세션 한 번에 로드
+  // Promise.all 병렬 페칭 — 서재 도서 + 영화관 영화 + 폴더 + 독서 세션 한 번에 로드
   const [
     { data: userBooks },
+    { data: userMovies },
     { data: folders },
     { data: readingSessions },
   ] = await Promise.all([
     supabase
       .from('user_books')
       .select('*, books(*)')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('user_movies')
+      .select('*, movies(*)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }),
     supabase
@@ -35,6 +41,7 @@ export default async function DashboardPage() {
   return (
     <DashboardClient
       userBooks={userBooks || []}
+      userMovies={userMovies || []}
       folders={folders || []}
       readingSessions={readingSessions || []}
     />

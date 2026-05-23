@@ -5,19 +5,27 @@ import type { Profile } from '@/types';
 import type { User } from '@supabase/supabase-js';
 import { SearchInput } from '@/components/ui/Input';
 import ThemeToggle from '@/components/ui/ThemeToggle';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import BookSearch from '@/components/library/BookSearch';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import ContentSearch from '@/components/library/ContentSearch';
 
 interface HeaderProps {
   user: User;
   profile: Profile | null;
 }
 
-export default function Header({ user, profile }: HeaderProps) {
+type TabMode = 'HOME' | 'BOOK' | 'MOVIE';
+
+function HeaderContent({ user, profile }: HeaderProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const currentTab = (searchParams.get('tab') as TabMode) || 'HOME';
   const yearlyGoal = profile?.yearly_goal || 0;
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  const handleTabChange = (tab: TabMode) => {
+    router.push(`/dashboard?tab=${tab}`);
+  };
 
   return (
     <>
@@ -33,34 +41,66 @@ export default function Header({ user, profile }: HeaderProps) {
           gap: '16px',
         }}
       >
-        {/* 좌측: 로고 */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            flexShrink: 0,
-            cursor: 'pointer'
-          }}
-          onClick={() => router.push('/dashboard')}
-        >
-          <span style={{ fontSize: '24px' }}>📚</span>
-          <span
+        {/* 좌측: 로고 및 탭 네비게이션 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '48px' }}>
+          <div
             style={{
-              fontSize: '16px',
-              fontWeight: 700,
-              color: 'var(--text-primary)',
-              letterSpacing: '-0.5px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              flexShrink: 0,
+              cursor: 'pointer'
             }}
+            onClick={() => router.push('/dashboard')}
           >
-            ContentDB_BX
-          </span>
+            <span style={{ fontSize: '24px' }}>📚</span>
+            <span
+              style={{
+                fontSize: '16px',
+                fontWeight: 700,
+                color: 'var(--text-primary)',
+                letterSpacing: '-0.5px',
+              }}
+            >
+              ContentDB_BX
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', gap: '24px' }}>
+            {[
+              { key: 'HOME', label: '✨ 추천' },
+              { key: 'BOOK', label: '📚 도서' },
+              { key: 'MOVIE', label: '🎬 영화' },
+            ].map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => handleTabChange(tab.key as TabMode)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '16px',
+                  fontWeight: currentTab === tab.key ? 800 : 500,
+                  color: currentTab === tab.key ? 'var(--text-primary)' : 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  padding: '4px 0',
+                  transition: 'color var(--transition-fast)',
+                }}
+                className="focus-ring"
+              >
+                {tab.label}
+                {currentTab === tab.key && (
+                  <div style={{ position: 'absolute', bottom: '-15px', left: 0, right: 0, height: '3px', backgroundColor: 'var(--accent)', borderRadius: '3px 3px 0 0' }} />
+                )}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* 중앙: 검색바 (클릭 시 모달 오픈) */}
-        <div style={{ flex: 1, maxWidth: '480px' }} onClick={() => setIsSearchOpen(true)}>
+        {/* 중앙: 검색바 */}
+        <div style={{ flex: 1, maxWidth: '400px', margin: '0 auto' }} onClick={() => setIsSearchOpen(true)}>
           <SearchInput
-            placeholder="도서 검색..."
+            placeholder="도서, 영화 통합 검색..."
             style={{ width: '100%', cursor: 'pointer' }}
             readOnly
           />
@@ -130,7 +170,15 @@ export default function Header({ user, profile }: HeaderProps) {
       </header>
 
       {/* 도서 검색 모달 */}
-      <BookSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+      <ContentSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </>
+  );
+}
+
+export default function Header(props: HeaderProps) {
+  return (
+    <Suspense fallback={<div style={{ height: 'var(--header-height)' }}></div>}>
+      <HeaderContent {...props} />
+    </Suspense>
   );
 }

@@ -1,47 +1,67 @@
 'use client';
-// ZONE 2: 사이드바 — 폴더 트리 + 독서 상태 필터
+// ZONE 2: 사이드바 — 상단 탭(HOME/BOOK/MOVIE) 상태에 따라 동적 렌더링
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useState, useTransition } from 'react';
-import type { BookStatus } from '@/types';
-import { createFolder, updateBookFolder, updateFolderOrder, updateFolder, deleteFolder } from '@/app/dashboard/actions';
+import { createFolder, updateBookFolder, updateFolder, deleteFolder } from '@/app/dashboard/actions';
+import type { Folder } from '@/types';
 
-const STATUS_TABS: { key: BookStatus | 'ALL'; label: string; icon: string }[] = [
-  { key: 'ALL', label: '전체', icon: '📖' },
+const BOOK_STATUS_TABS = [
+  { key: 'ALL', label: '전체 도서', icon: '📖' },
   { key: 'READING', label: '읽는 중', icon: '📘' },
-  { key: 'WANT_TO_READ', label: '읽고 싶은', icon: '💜' },
+  { key: 'WANT_TO_READ', label: '위시리스트', icon: '💜' },
   { key: 'COMPLETED', label: '완독', icon: '✅' },
   { key: 'DROPPED', label: '중단', icon: '⏸️' },
 ];
 
-export default function Sidebar({ folders = [] }: { folders?: any[] }) {
+const MOVIE_STATUS_TABS = [
+  { key: 'ALL', label: '전체 영화', icon: '🎬' },
+  { key: 'WATCHING', label: '보는 중', icon: '🍿' },
+  { key: 'WANT_TO_WATCH', label: '위시리스트', icon: '💜' },
+  { key: 'COMPLETED', label: '시청 완료', icon: '✅' },
+  { key: 'DROPPED', label: '중단', icon: '⏸️' },
+];
+
+export default function Sidebar({ folders = [] }: { folders?: Folder[] }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const activeStatus = searchParams.get('status') || 'ALL';
-  const activeFolderId = searchParams.get('folderId');
+  const pathname = usePathname();
+  
+  let currentTab = (searchParams.get('tab') as 'HOME' | 'BOOK' | 'MOVIE') || 'HOME';
+  if (pathname.startsWith('/dashboard/book')) currentTab = 'BOOK';
+  if (pathname.startsWith('/dashboard/movie')) currentTab = 'MOVIE';
+
+  const bookStatus = searchParams.get('bookStatus') || 'ALL';
+  const movieStatus = searchParams.get('movieStatus') || 'ALL';
+  const activeBookFolderId = searchParams.get('bookFolderId');
+  const activeMovieFolderId = searchParams.get('movieFolderId');
+  
   const [isPending, startTransition] = useTransition();
 
-  // Drag and Drop state for folder reordering
   const [draggedFolderId, setDraggedFolderId] = useState<string | null>(null);
-  
-  // Edit Folder State
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [editingFolderName, setEditingFolderName] = useState('');
   const [hoveredFolderId, setHoveredFolderId] = useState<string | null>(null);
 
-  const handleStatusClick = (status: string) => {
-    if (status === 'ALL') {
-      router.push('/dashboard');
-    } else {
-      router.push(`/dashboard?status=${status}`);
-    }
+  const bookFolders = folders.filter(f => f.media_type === 'BOOK' || !f.media_type);
+  const movieFolders = folders.filter(f => f.media_type === 'MOVIE');
+
+  const updateQueryParams = (paramsToUpdate: Record<string, string | null>) => {
+    const current = new URLSearchParams(Array.from(searchParams.entries()));
+    Object.entries(paramsToUpdate).forEach(([key, value]) => {
+      if (value === null) current.delete(key);
+      else current.set(key, value);
+    });
+    const search = current.toString();
+    const query = search ? `?${search}` : '';
+    router.push(`/dashboard${query}`);
   };
 
-  const handleCreateFolder = () => {
-    const name = window.prompt('새 폴더 이름을 입력하세요:');
+  const handleCreateFolder = (mediaType: 'BOOK' | 'MOVIE') => {
+    const name = window.prompt(`새 ${mediaType === 'BOOK' ? '도서' : '영화'} 폴더 이름을 입력하세요:`);
     if (name && name.trim()) {
       startTransition(async () => {
-        const res = await createFolder(name.trim());
+        const res = await createFolder(name.trim(), mediaType);
         if (!res.success) alert(res.message);
       });
     }
@@ -58,17 +78,14 @@ export default function Sidebar({ folders = [] }: { folders?: any[] }) {
     if (!editingFolderName.trim()) return;
     startTransition(async () => {
       const res = await updateFolder(folderId, editingFolderName.trim());
-      if (res.success) {
-        setEditingFolderId(null);
-      } else {
-        alert(res.message);
-      }
+      if (res.success) setEditingFolderId(null);
+      else alert(res.message);
     });
   };
 
   const handleDeleteFolder = (e: React.MouseEvent, folderId: string) => {
     e.stopPropagation();
-    if (window.confirm('정말 삭제하시겠습니까? 이 폴더의 책들은 폴더 지정이 해제됩니다.')) {
+    if (window.confirm('정말 삭제하시겠습니까? 이 폴더의 항목들은 폴더 지정이 해제됩니다.')) {
       startTransition(async () => {
         const res = await deleteFolder(folderId);
         if (!res.success) alert(res.message);
@@ -76,48 +93,85 @@ export default function Sidebar({ folders = [] }: { folders?: any[] }) {
     }
   };
 
-  // -- Drag and Drop Handlers for Folders --
   const onDragStart = (e: React.DragEvent, folderId: string) => {
     e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'folder', id: folderId }));
     setDraggedFolderId(folderId);
   };
 
-  const onDragOver = (e: React.DragEvent) => {
-    e.preventDefault(); // allow drop
-  };
-
-  const onDrop = (e: React.DragEvent, targetFolderId: string) => {
+  const onDrop = (e: React.DragEvent, targetFolderId: string, folderMediaType: 'BOOK' | 'MOVIE') => {
     e.preventDefault();
     setDraggedFolderId(null);
     try {
       const data = JSON.parse(e.dataTransfer.getData('text/plain'));
-      if (data.type === 'book') {
-        // Drop book into folder
+      if (data.type === 'book' && folderMediaType === 'BOOK') {
         startTransition(async () => {
           const res = await updateBookFolder(data.id, targetFolderId);
           if (!res.success) alert(res.message);
         });
-      } else if (data.type === 'folder' && data.id !== targetFolderId) {
-        // Reorder folders
-        const draggedIdx = folders.findIndex(f => f.id === data.id);
-        const targetIdx = folders.findIndex(f => f.id === targetFolderId);
-        if (draggedIdx >= 0 && targetIdx >= 0) {
-          const newFolders = [...folders];
-          const [draggedItem] = newFolders.splice(draggedIdx, 1);
-          newFolders.splice(targetIdx, 0, draggedItem);
-          
-          const updates = newFolders.map((f, i) => ({ id: f.id, sort_order: i + 1 }));
-          startTransition(async () => {
-            const res = await updateFolderOrder(updates);
-            if (!res.success) alert(res.message);
-          });
-        }
+      } else if (data.type === 'movie' && folderMediaType === 'MOVIE') {
+        alert('영화 폴더 이동이 곧 지원됩니다.');
       }
-    } catch (err) {
-      // JSON parse error or something else
-    }
+    } catch (err) {}
   };
 
+  const renderFolderList = (folderList: Folder[], type: 'BOOK' | 'MOVIE', activeFolderId: string | null, paramKey: string) => {
+    if (folderList.length === 0) return (
+      <div style={{ color: 'var(--text-tertiary)', fontSize: '13px', padding: '12px', textAlign: 'center' }}>
+        폴더를 추가하세요.
+      </div>
+    );
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+        {folderList.map(folder => (
+          <div
+            key={folder.id}
+            draggable
+            onDragStart={(e) => onDragStart(e, folder.id)}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => onDrop(e, folder.id, type)}
+            onClick={() => updateQueryParams({ [paramKey]: activeFolderId === folder.id ? null : folder.id })}
+            onMouseEnter={() => setHoveredFolderId(folder.id)}
+            onMouseLeave={() => setHoveredFolderId(null)}
+            style={{
+              padding: '8px 12px',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '13px',
+              color: activeFolderId === folder.id ? 'var(--accent)' : 'var(--text-secondary)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              backgroundColor: activeFolderId === folder.id ? 'var(--bg-card)' : 'transparent',
+              transition: 'background-color 0.2s',
+            }}
+            className="hover-bg folder-item"
+          >
+            <span style={{ color: activeFolderId === folder.id ? 'var(--accent)' : 'var(--text-tertiary)' }}>📁</span>
+            {editingFolderId === folder.id ? (
+              <form onSubmit={(e) => handleSaveEditFolder(e, folder.id)} style={{ flex: 1, display: 'flex' }}>
+                <input
+                  type="text"
+                  value={editingFolderName}
+                  onChange={(e) => setEditingFolderName(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  autoFocus
+                  style={{ flex: 1, background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', fontSize: '13px', outline: 'none', padding: '2px 4px', borderRadius: '4px', minWidth: '50px' }}
+                />
+              </form>
+            ) : (
+              <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{folder.name}</span>
+            )}
+            {!editingFolderId && (
+              <div className="folder-actions" style={{ display: hoveredFolderId === folder.id ? 'flex' : 'none', gap: '4px' }}>
+                <button onClick={(e) => handleEditFolder(e, folder)} title="수정" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', padding: '2px' }}>✏️</button>
+                <button onClick={(e) => handleDeleteFolder(e, folder.id)} title="삭제" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', padding: '2px' }}>🗑️</button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <aside
@@ -129,175 +183,103 @@ export default function Sidebar({ folders = [] }: { folders?: any[] }) {
         padding: '16px 0',
         display: 'flex',
         flexDirection: 'column',
-        gap: '24px',
+        gap: '32px',
       }}
     >
-      {/* 독서 상태 필터 */}
-      <section style={{ padding: '0 16px' }}>
-        <h3
-          style={{
-            fontSize: '11px',
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            color: 'var(--text-tertiary)',
-            letterSpacing: '0.5px',
-            marginBottom: '8px',
-          }}
-        >
-          독서 상태
-        </h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-          {STATUS_TABS.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => handleStatusClick(tab.key)}
-              className="focus-ring"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                padding: '8px 12px',
-                borderRadius: 'var(--radius-md)',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '13px',
-                fontWeight: activeStatus === tab.key ? 600 : 400,
-                color: activeStatus === tab.key ? 'var(--text-primary)' : 'var(--text-secondary)',
-                backgroundColor: activeStatus === tab.key ? 'var(--accent-light)' : 'transparent',
-                transition: 'all var(--transition-fast)',
-                textAlign: 'left',
-                width: '100%',
-              }}
-            >
-              <span style={{ fontSize: '15px' }}>{tab.icon}</span>
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* 폴더 트리 */}
-      <section style={{ padding: '0 16px' }}>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: '8px',
-          }}
-        >
-          <h3
-            style={{
-              fontSize: '11px',
-              fontWeight: 600,
-              textTransform: 'uppercase',
-              color: 'var(--text-tertiary)',
-              letterSpacing: '0.5px',
-            }}
-          >
-            프로젝트 폴더
-          </h3>
-          <button
-            onClick={handleCreateFolder}
-            disabled={isPending}
-            className="focus-ring"
-            title="폴더 추가"
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--text-tertiary)',
-              fontSize: '16px',
-              padding: '2px',
-              borderRadius: 'var(--radius-sm)',
-              opacity: isPending ? 0.5 : 1
-            }}
-          >
-            +
-          </button>
-        </div>
-        
-        {folders.length === 0 ? (
-          <div
-            style={{
-              color: 'var(--text-tertiary)',
-              fontSize: '13px',
-              padding: '12px',
-              textAlign: 'center',
-            }}
-          >
-            폴더를 추가하여
-            <br />
-            도서를 분류하세요.
+      {/* ── HOME 탭 일 때의 사이드바 ── */}
+      {currentTab === 'HOME' && (
+        <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ marginBottom: '16px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '8px' }}>
+            <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>✨ 추천 및 영감</h2>
           </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            {folders.map(folder => (
-              <div
-                key={folder.id}
-                draggable
-                onDragStart={(e) => onDragStart(e, folder.id)}
-                onDragOver={onDragOver}
-                onDrop={(e) => onDrop(e, folder.id)}
-                onClick={() => router.push(`/dashboard?folderId=${folder.id}`)}
-                onMouseEnter={() => setHoveredFolderId(folder.id)}
-                onMouseLeave={() => setHoveredFolderId(null)}
-                style={{
-                  padding: '8px 12px',
-                  borderRadius: 'var(--radius-md)',
-                  fontSize: '13px',
-                  color: activeFolderId === folder.id ? 'var(--accent)' : 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  backgroundColor: activeFolderId === folder.id ? 'var(--bg-card)' : (draggedFolderId === folder.id ? 'var(--bg-secondary)' : 'transparent'),
-                  opacity: draggedFolderId === folder.id ? 0.5 : 1,
-                  transition: 'background-color 0.2s',
-                  position: 'relative'
-                }}
-                className="hover-bg folder-item"
-              >
-                <span style={{ color: activeFolderId === folder.id ? 'var(--accent)' : 'var(--text-tertiary)' }}>📁</span>
-                
-                {editingFolderId === folder.id ? (
-                  <form onSubmit={(e) => handleSaveEditFolder(e, folder.id)} style={{ flex: 1, display: 'flex' }}>
-                    <input
-                      type="text"
-                      value={editingFolderName}
-                      onChange={(e) => setEditingFolderName(e.target.value)}
-                      onClick={(e) => e.stopPropagation()}
-                      autoFocus
-                      style={{
-                        flex: 1,
-                        background: 'var(--bg-secondary)',
-                        border: '1px solid var(--border-subtle)',
-                        color: 'var(--text-primary)',
-                        fontSize: '13px',
-                        outline: 'none',
-                        padding: '2px 4px',
-                        borderRadius: '4px',
-                        minWidth: '50px'
-                      }}
-                    />
-                  </form>
-                ) : (
-                  <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {folder.name}
-                  </span>
-                )}
-
-                {!editingFolderId && (
-                  <div className="folder-actions" style={{ display: hoveredFolderId === folder.id ? 'flex' : 'none', gap: '4px' }}>
-                    <button onClick={(e) => handleEditFolder(e, folder)} title="수정" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', padding: '2px' }}>✏️</button>
-                    <button onClick={(e) => handleDeleteFolder(e, folder.id)} title="삭제" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', padding: '2px' }}>🗑️</button>
-                  </div>
-                )}
-              </div>
-            ))}
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+            나의 지식 성단을 채울 새로운 도서와 영화를 탐색해 보세요. 
+          </p>
+          <div style={{ padding: '16px', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-lg)', marginTop: '8px' }}>
+            <span style={{ fontSize: '24px' }}>🌌</span>
+            <p style={{ fontSize: '13px', fontWeight: 500, marginTop: '8px', color: 'var(--text-primary)' }}>우주를 유영하는 중...</p>
           </div>
-        )}
-      </section>
+        </div>
+      )}
+
+      {/* ── BOOK 탭 일 때의 사이드바 ── */}
+      {currentTab === 'BOOK' && (
+        <div className="animate-fade-in">
+          <div style={{ padding: '0 16px', marginBottom: '8px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '8px' }}>
+            <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>📚 도서 컬렉션</h2>
+          </div>
+          
+          <section style={{ padding: '0 16px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              {BOOK_STATUS_TABS.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => updateQueryParams({ bookStatus: tab.key === 'ALL' ? null : tab.key })}
+                  className="focus-ring"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px',
+                    borderRadius: 'var(--radius-md)', border: 'none', cursor: 'pointer', fontSize: '13px',
+                    fontWeight: bookStatus === tab.key ? 600 : 400,
+                    color: bookStatus === tab.key ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    backgroundColor: bookStatus === tab.key ? 'var(--accent-light)' : 'transparent',
+                    textAlign: 'left', width: '100%', transition: 'all var(--transition-fast)',
+                  }}
+                >
+                  <span style={{ fontSize: '15px' }}>{tab.icon}</span> {tab.label}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section style={{ padding: '0 16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <h3 style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-tertiary)' }}>도서 프로젝트</h3>
+              <button onClick={() => handleCreateFolder('BOOK')} className="focus-ring" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)' }}>+</button>
+            </div>
+            {renderFolderList(bookFolders, 'BOOK', activeBookFolderId, 'bookFolderId')}
+          </section>
+        </div>
+      )}
+
+      {/* ── MOVIE 탭 일 때의 사이드바 ── */}
+      {currentTab === 'MOVIE' && (
+        <div className="animate-fade-in">
+          <div style={{ padding: '0 16px', marginBottom: '8px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '8px' }}>
+            <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>🎬 영화 컬렉션</h2>
+          </div>
+
+          <section style={{ padding: '0 16px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              {MOVIE_STATUS_TABS.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => updateQueryParams({ movieStatus: tab.key === 'ALL' ? null : tab.key })}
+                  className="focus-ring"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px',
+                    borderRadius: 'var(--radius-md)', border: 'none', cursor: 'pointer', fontSize: '13px',
+                    fontWeight: movieStatus === tab.key ? 600 : 400,
+                    color: movieStatus === tab.key ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    backgroundColor: movieStatus === tab.key ? 'rgba(230, 50, 80, 0.15)' : 'transparent',
+                    textAlign: 'left', width: '100%', transition: 'all var(--transition-fast)',
+                  }}
+                >
+                  <span style={{ fontSize: '15px' }}>{tab.icon}</span> {tab.label}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section style={{ padding: '0 16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <h3 style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-tertiary)' }}>영화 폴더</h3>
+              <button onClick={() => handleCreateFolder('MOVIE')} className="focus-ring" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)' }}>+</button>
+            </div>
+            {renderFolderList(movieFolders, 'MOVIE', activeMovieFolderId, 'movieFolderId')}
+          </section>
+        </div>
+      )}
+
     </aside>
   );
 }

@@ -237,7 +237,7 @@ export default function Sidebar({ folders = [] }: { folders?: Folder[] }) {
               {BOOK_STATUS_TABS.map((tab) => (
                 <button
                   key={tab.key}
-                  onClick={() => updateQueryParams({ bookStatus: tab.key === 'ALL' ? null : tab.key })}
+                  onClick={() => updateQueryParams({ bookStatus: tab.key === 'ALL' ? null : tab.key, bookFolderId: null })}
                   className="focus-ring"
                   style={{
                     display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px',
@@ -276,7 +276,7 @@ export default function Sidebar({ folders = [] }: { folders?: Folder[] }) {
               {MOVIE_STATUS_TABS.map((tab) => (
                 <button
                   key={tab.key}
-                  onClick={() => updateQueryParams({ movieStatus: tab.key === 'ALL' ? null : tab.key })}
+                  onClick={() => updateQueryParams({ movieStatus: tab.key === 'ALL' ? null : tab.key, movieFolderId: null })}
                   className="focus-ring"
                   style={{
                     display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px',
@@ -315,7 +315,7 @@ export default function Sidebar({ folders = [] }: { folders?: Folder[] }) {
               {ANIME_STATUS_TABS.map((tab) => (
                 <button
                   key={tab.key}
-                  onClick={() => updateQueryParams({ animeStatus: tab.key === 'ALL' ? null : tab.key })}
+                  onClick={() => updateQueryParams({ animeStatus: tab.key === 'ALL' ? null : tab.key, animeFolderId: null })}
                   className="focus-ring"
                   style={{
                     display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px',

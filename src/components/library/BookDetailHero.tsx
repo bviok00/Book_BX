@@ -270,35 +270,34 @@ export default function BookDetailHero({ userBook, book, folders = [], isReadOnl
                     {folders.filter(f => f.media_type === 'BOOK').map(f => (
                       <option key={f.id} value={f.id} style={{ background: '#1a1a1a', color: '#fff' }}>{f.name}</option>
                     ))}
-                  </select>
-                </>
-              )}
-            </div>
+                    </select>
 
-            {/* 별점 평가 */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginBottom: '4px' }}>내 평가</span>
-              <div style={{ display: 'flex', gap: '4px', fontSize: '24px' }}>
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <span
-                    key={star}
-                    onClick={() => handleRatingChange(star)}
-                    style={{
-                      cursor: 'pointer',
-                      color: star <= optimisticRating ? '#FFD700' : 'rgba(255,255,255,0.2)',
-                      transition: 'color 0.2s',
-                      textShadow: star <= optimisticRating ? '0 0 10px rgba(255,215,0,0.5)' : 'none'
-                    }}
-                    className="hover-scale"
-                  >
-                    ★
-                  </span>
-                ))}
-              </div>
+                    {/* 별점 평가 */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginBottom: '4px' }}>내 평가</span>
+                      <div style={{ display: 'flex', gap: '4px', fontSize: '24px' }}>
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <span
+                            key={star}
+                            onClick={() => handleRatingChange(star)}
+                            style={{
+                              cursor: 'pointer',
+                              color: star <= optimisticRating ? '#FFD700' : 'rgba(255,255,255,0.2)',
+                              transition: 'color 0.2s',
+                              textShadow: star <= optimisticRating ? '0 0 10px rgba(255,215,0,0.5)' : 'none'
+                            }}
+                            className="hover-scale"
+                          >
+                            ★
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );

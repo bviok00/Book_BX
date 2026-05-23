@@ -178,7 +178,7 @@ export default function DashboardClient({
 
       {currentTab === 'BOOK' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-          {unifiedBooks.length > 0 && !bookFolderId && (!bookStatus || bookStatus === 'ALL') && (
+          {unifiedBooks.length > 0 && !bookFolderId && (!bookStatus || bookStatus === 'ALL') && viewMode === 'grid' && (
             <DiscoverySection 
               existingIsbns={unifiedBooks.map(c => c.contentId)} 
               existingTmdbIds={unifiedMovies.map(c => c.contentId)}
@@ -204,7 +204,7 @@ export default function DashboardClient({
 
       {currentTab === 'MOVIE' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-          {unifiedMovies.length > 0 && !movieFolderId && (!movieStatus || movieStatus === 'ALL') && (
+          {unifiedMovies.length > 0 && !movieFolderId && (!movieStatus || movieStatus === 'ALL') && viewMode === 'grid' && (
             <DiscoverySection 
               existingIsbns={unifiedBooks.map(c => c.contentId)} 
               existingTmdbIds={unifiedMovies.map(c => c.contentId)}
@@ -230,7 +230,7 @@ export default function DashboardClient({
 
       {currentTab === 'ANIME' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-          {unifiedAnimes.length > 0 && !animeFolderId && (!animeStatus || animeStatus === 'ALL') && (
+          {unifiedAnimes.length > 0 && !animeFolderId && (!animeStatus || animeStatus === 'ALL') && viewMode === 'grid' && (
             <DiscoverySection 
               existingIsbns={unifiedBooks.map(c => c.contentId)} 
               existingTmdbIds={unifiedMovies.map(c => c.contentId)}

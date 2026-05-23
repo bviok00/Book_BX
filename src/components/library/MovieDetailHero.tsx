@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { updateMovieStatus, updateMovieProgress, deleteUserMovie, updateMovieRating } from '@/app/dashboard/movie-actions';
+import { updateMovieStatus, updateMovieProgress, deleteUserMovie, updateMovieRating, updateMovieFolder } from '@/app/dashboard/movie-actions';
 import type { MovieStatus } from '@/types';
 import { StatusBadge } from '@/components/ui/Badge';
 import { TMDB_IMAGE_BASE, TMDB_BACKDROP_SIZE } from '@/types/tmdb';
@@ -13,6 +13,16 @@ export default function MovieDetailHero({ userMovie, movie, folders = [], isRead
   const [optimisticStatus, setOptimisticStatus] = useState<MovieStatus>(userMovie.status);
   const [optimisticProgress, setOptimisticProgress] = useState<number>(userMovie.progress_pct || 0);
   const [optimisticRating, setOptimisticRating] = useState<number>(userMovie.rating || 0);
+  const [optimisticFolderId, setOptimisticFolderId] = useState<string | null>(userMovie.folder_id || null);
+
+  const handleFolderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (isReadOnly) return;
+    const newFolderId = e.target.value === 'none' ? null : e.target.value;
+    setOptimisticFolderId(newFolderId);
+    startTransition(async () => {
+      await updateMovieFolder(userMovie.id, newFolderId);
+    });
+  };
 
   const handleStatusChange = (newStatus: MovieStatus) => {
     if (optimisticStatus === newStatus) {

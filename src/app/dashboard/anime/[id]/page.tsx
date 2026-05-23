@@ -3,7 +3,8 @@ import { redirect } from 'next/navigation';
 import AnimeDetailHero from '@/components/library/AnimeDetailHero';
 import AnimeTagsEditor from '@/components/library/AnimeTagsEditor';
 import AnimeNotesFeed from '@/components/library/AnimeNotesFeed';
-import MovieMediaSection from '@/components/library/MovieMediaSection'; // 미디어 섹션 재사용 가능하면 재사용 (혹은 생략)
+import MovieMediaSection from '@/components/library/MovieMediaSection';
+import SimilarRecommendationsClient from '@/components/library/SimilarRecommendationsClient';
 
 export default async function AnimeDetailPage({
   params,
@@ -81,6 +82,26 @@ export default async function AnimeDetailPage({
               }
             }
           }
+          trailer {
+            id
+            site
+            thumbnail
+          }
+          recommendations(page: 1, perPage: 15) {
+            nodes {
+              mediaRecommendation {
+                id
+                title {
+                  romaji
+                  english
+                  native
+                }
+                coverImage {
+                  large
+                }
+              }
+            }
+          }
         }
       }
     `;
@@ -128,8 +149,13 @@ export default async function AnimeDetailPage({
             status: 'NONE',
             progress_pct: 0,
             rating: 0,
-            granular_notes: [],
+              granular_notes: [],
             anime_tags: []
+          };
+          anime.metadata = {
+            ...anime.metadata,
+            trailer: m.trailer,
+            recommendations: m.recommendations
           };
         }
       }
@@ -139,10 +165,84 @@ export default async function AnimeDetailPage({
   }
 
   const folders = foldersRes.data || [];
+  let anilistMedia = null;
+
+  // 서재에 등록된 애니메이션이라도 추가 데이터(트레일러, 추천)를 위해 Anilist 패치
+  if (userAnime && !isReadOnly) {
+    const anilistQuery = `
+      query ($id: Int) {
+        Media (id: $id, type: ANIME) {
+          trailer {
+            id
+            site
+            thumbnail
+          }
+          recommendations(page: 1, perPage: 15) {
+            nodes {
+              mediaRecommendation {
+                id
+                title {
+                  romaji
+                  english
+                  native
+                }
+                coverImage {
+                  large
+                }
+              }
+            }
+          }
+        }
+      }
+    `;
+    try {
+      const anilistRes = await fetch('https://graphql.anilist.co', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ query: anilistQuery, variables: { id: userAnime.anilist_id } })
+      });
+      if (anilistRes.ok) {
+        const json = await anilistRes.json();
+        anilistMedia = json.data?.Media;
+      }
+    } catch (e) {
+      console.error('AniList extra fetch error:', e);
+    }
+  } else if (isReadOnly) {
+    // isReadOnly일 경우, 이미 패치한 데이터를 쓰기 위해, 원래 패치 코드를 수정할 필요 없이 여기서 임시 처리하지만,
+    // 위에서 m을 scope 밖으로 빼기 귀찮으므로, 다시 패치하진 않고 위 코드에서 담은 변수를 쓰기 위해 m을 저장해야 함.
+    // 위 코드에서 metadata에 통째로 넣거나 하자.
+  }
 
   if (!userAnime || !anime) {
     return <div className="p-8 text-center text-[var(--text-secondary)]">애니메이션을 찾을 수 없습니다.</div>;
   }
+
+  // 트레일러 및 추천 데이터 추출
+  const trailerData = anime.metadata?.trailer || anilistMedia?.trailer;
+  const recommendationsData = anime.metadata?.recommendations || anilistMedia?.recommendations;
+
+  const videos = trailerData?.site === 'youtube' && trailerData?.id ? [{
+    id: trailerData.id,
+    key: trailerData.id,
+    site: 'YouTube',
+    name: 'Trailer',
+    type: 'Trailer'
+  }] : [];
+
+  const recommendedItems = (recommendationsData?.nodes || [])
+    .filter((n: any) => n.mediaRecommendation)
+    .map((n: any) => {
+      const m = n.mediaRecommendation;
+      return {
+        id: `ANIME_${m.id}`,
+        type: 'ANIME',
+        title: m.title.romaji || m.title.english || m.title.native,
+        creator: m.title.native,
+        posterUrl: m.coverImage?.large,
+        originalData: m
+      };
+    });
 
   const notes = userAnime.granular_notes || [];
 
@@ -187,6 +287,16 @@ export default async function AnimeDetailPage({
           {!isReadOnly && <AnimeNotesFeed userAnimeId={userAnime.id} notes={notes} user={user} />}
         </div>
       </div>
+
+      {/* 애니메이션 트레일러 및 미디어 섹션 (하단 Full Width) */}
+      {videos.length > 0 && <MovieMediaSection videos={videos} images={anime.backdrop_url ? [{file_path: anime.backdrop_url}] : []} />}
+
+      {/* ── 비슷한 추천 작품 ── */}
+      {recommendedItems.length > 0 && (
+        <div style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '0 48px', paddingBottom: '48px' }}>
+          <SimilarRecommendationsClient title="이 애니와 비슷한 작품" items={recommendedItems} />
+        </div>
+      )}
     </div>
   );
 }

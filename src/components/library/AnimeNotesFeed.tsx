@@ -2,12 +2,39 @@
 
 import { useState, useTransition } from 'react';
 import { addAnimeNote, deleteAnimeNote } from '@/app/dashboard/anime-actions';
-import { formatDistanceToNow } from 'date-fns';
-import { ko } from 'date-fns/locale';
+
 
 export default function AnimeNotesFeed({ userAnimeId, notes = [], user }: { userAnimeId: string, notes: any[], user: any }) {
   const [noteInput, setNoteInput] = useState('');
   const [isPending, startTransition] = useTransition();
+
+  const getRelativeTime = (dateString: string) => {
+    const rtf = new Intl.RelativeTimeFormat('ko', { numeric: 'auto' });
+    const now = new Date().getTime();
+    const then = new Date(dateString).getTime();
+    const diffInSeconds = Math.round((then - now) / 1000);
+    
+    if (Math.abs(diffInSeconds) < 60) {
+      return rtf.format(diffInSeconds, 'second');
+    }
+    const diffInMinutes = Math.round(diffInSeconds / 60);
+    if (Math.abs(diffInMinutes) < 60) {
+      return rtf.format(diffInMinutes, 'minute');
+    }
+    const diffInHours = Math.round(diffInMinutes / 60);
+    if (Math.abs(diffInHours) < 24) {
+      return rtf.format(diffInHours, 'hour');
+    }
+    const diffInDays = Math.round(diffInHours / 24);
+    if (Math.abs(diffInDays) < 30) {
+      return rtf.format(diffInDays, 'day');
+    }
+    const diffInMonths = Math.round(diffInDays / 30);
+    if (Math.abs(diffInMonths) < 12) {
+      return rtf.format(diffInMonths, 'month');
+    }
+    return rtf.format(Math.round(diffInDays / 365), 'year');
+  };
 
   const handleAddNote = (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,7 +124,7 @@ export default function AnimeNotesFeed({ userAnimeId, notes = [], user }: { user
                   <div>
                     <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>{user?.email?.split('@')[0]}</div>
                     <div style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>
-                      {formatDistanceToNow(new Date(note.created_at), { addSuffix: true, locale: ko })}
+                      {getRelativeTime(note.created_at)}
                     </div>
                   </div>
                 </div>

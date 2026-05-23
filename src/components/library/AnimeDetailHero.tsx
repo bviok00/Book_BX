@@ -196,7 +196,7 @@ export default function AnimeDetailHero({ userAnime, anime, folders = [], isRead
         {/* 정보 */}
         <div style={{ flex: '1', minWidth: '300px', color: '#fff', paddingBottom: '16px' }}>
           <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
-            {!isReadOnly && <StatusBadge status={optimisticStatus} size="sm" type="MOVIE" />}
+            {!isReadOnly && <StatusBadge status={optimisticStatus} size="sm" type="ANIME" />}
             {anime.release_date && (
               <span style={{ fontSize: '11px', padding: '4px 8px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)' }}>
                 {anime.release_date.split('-')[0]}

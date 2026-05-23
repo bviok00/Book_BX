@@ -295,7 +295,6 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
             </section>
           );
         })}
-    </div>
 
       {/* Preview Modal */}
       {previewItem && (

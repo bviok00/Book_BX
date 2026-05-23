@@ -276,7 +276,7 @@ export default async function AnimeDetailPage({
           <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '24px', color: 'var(--text-primary)' }}>
             개요
           </h2>
-          <div className="glass-card" style={{ padding: '24px', maxHeight: '600px', overflowY: 'auto' }}>
+          <div className="glass-card" style={{ padding: '24px', maxHeight: '300px', overflowY: 'auto' }}>
             {anime.overview ? (
               <p 
                 style={{ fontSize: '14px', lineHeight: 1.8, color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}

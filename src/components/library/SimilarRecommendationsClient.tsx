@@ -6,6 +6,7 @@ import Button from '@/components/ui/Button';
 import HorizontalScroll from '@/components/ui/HorizontalScroll';
 import { addBookToLibrary } from '@/app/dashboard/actions';
 import { addMovieToLibrary } from '@/app/dashboard/movie-actions';
+import { addAnimeToLibrary } from '@/app/dashboard/anime-actions';
 import type { CurationItem } from '@/types';
 
 interface SimilarRecommendationsClientProps {
@@ -39,7 +40,7 @@ export default function SimilarRecommendationsClient({ title, items }: SimilarRe
         } else {
           showToast(result.message, 'error');
         }
-      } else {
+      } else if (item.type === 'MOVIE') {
         const m = item.originalData;
         const result = await addMovieToLibrary(m.id, {
           title: m.title,
@@ -59,6 +60,26 @@ export default function SimilarRecommendationsClient({ title, items }: SimilarRe
         } else {
           showToast(result.message, 'error');
         }
+      } else if (item.type === 'ANIME') {
+        const a = item.originalData;
+        const result = await addAnimeToLibrary(a.id, {
+          title: a.title?.romaji || a.title?.english || a.title?.native || 'Unknown',
+          original_title: a.title?.native,
+          director: null,
+          poster_url: item.posterUrl,
+          backdrop_url: a.bannerImage,
+          genre: a.genres?.join(', '),
+          release_date: a.startDate?.year ? `${a.startDate.year}-${String(a.startDate.month || 1).padStart(2, '0')}-${String(a.startDate.day || 1).padStart(2, '0')}` : null,
+          runtime_min: a.duration,
+          overview: a.description,
+          metadata: { episodes: a.episodes, averageScore: a.averageScore }
+        });
+        if (result.success && result.data) {
+          showToast(result.message, 'success');
+          router.push(`/dashboard?tab=ANIME&animeStatus=WANT_TO_WATCH`);
+        } else {
+          showToast(result.message, 'error');
+        }
       }
     } catch (e) {
       console.error(e);
@@ -72,9 +93,12 @@ export default function SimilarRecommendationsClient({ title, items }: SimilarRe
     if (item.type === 'BOOK') {
       const b = item.originalData;
       router.push(`/dashboard/book/${b.isbn13 || b.isbn}`);
-    } else {
+    } else if (item.type === 'MOVIE') {
       const m = item.originalData;
       router.push(`/dashboard/movie/${m.id}`);
+    } else if (item.type === 'ANIME') {
+      const a = item.originalData;
+      router.push(`/dashboard/anime/${a.id}`);
     }
   };
 

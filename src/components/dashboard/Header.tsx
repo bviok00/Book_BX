@@ -14,7 +14,7 @@ interface HeaderProps {
   profile: Profile | null;
 }
 
-type TabMode = 'HOME' | 'BOOK' | 'MOVIE' | 'ANIME';
+type TabMode = 'HOME' | 'BOOK' | 'MOVIE' | 'ANIME' | 'INSIGHT';
 
 function HeaderContent({ user, profile }: HeaderProps) {
   const router = useRouter();
@@ -72,6 +72,7 @@ function HeaderContent({ user, profile }: HeaderProps) {
               { key: 'BOOK', label: '📚 도서' },
               { key: 'MOVIE', label: '🎬 영화' },
               { key: 'ANIME', label: '🌸 애니' },
+              { key: 'INSIGHT', label: '💡 인사이트' },
             ].map(tab => (
               <button
                 key={tab.key}

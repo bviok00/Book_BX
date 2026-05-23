@@ -1,5 +1,5 @@
 'use client';
-// ZONE 3: 대시보드 메인 클라이언트 — 상단 탭(HOME/BOOK/MOVIE) 완전 분할
+// ZONE 3: 대시보드 메인 클라이언트 — 상단 탭(HOME/BOOK/MOVIE/INSIGHT) 완전 분할
 
 import { useState, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -7,9 +7,10 @@ import type { Folder, ReadingSession, ContentItem } from '@/types';
 import { PosterCard } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/Badge';
 import DiscoverySection from '@/components/dashboard/DiscoverySection';
+import InsightDashboard from '@/components/dashboard/InsightDashboard';
 
 type ViewMode = 'grid' | 'list' | 'spine';
-type TabMode = 'HOME' | 'BOOK' | 'MOVIE';
+type TabMode = 'HOME' | 'BOOK' | 'MOVIE' | 'ANIME' | 'INSIGHT';
 
 interface DashboardClientProps {
   userBooks: any[];
@@ -30,7 +31,7 @@ export default function DashboardClient({
 
   const router = useRouter();
   const searchParams = useSearchParams();
-  const currentTab = (searchParams.get('tab') as TabMode | 'ANIME') || 'HOME';
+  const currentTab = (searchParams.get('tab') as TabMode) || 'HOME';
   const bookStatus = searchParams.get('bookStatus');
   const movieStatus = searchParams.get('movieStatus');
   const animeStatus = searchParams.get('animeStatus');
@@ -133,8 +134,8 @@ export default function DashboardClient({
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
       
-      {/* ── 상단 컨트롤 (뷰 모드 스위치 등) ── */}
-      {currentTab !== 'HOME' && (
+      {/* ── 상단 컨트롤 ── */}
+      {currentTab !== 'HOME' && currentTab !== 'INSIGHT' && (
         <div style={{ display: 'flex', justifyContent: 'flex-end', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '16px' }}>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <div style={{ display: 'flex', gap: '4px', padding: '4px', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--bg-secondary)' }}>
@@ -171,111 +172,77 @@ export default function DashboardClient({
             existingIsbns={unifiedBooks.map(c => c.contentId)} 
             existingTmdbIds={unifiedMovies.map(c => c.contentId)}
             existingAnilistIds={unifiedAnimes.map(c => c.contentId)}
-            filterType="BOOK"
-          />
-          <DiscoverySection 
-            existingIsbns={unifiedBooks.map(c => c.contentId)} 
-            existingTmdbIds={unifiedMovies.map(c => c.contentId)}
-            existingAnilistIds={unifiedAnimes.map(c => c.contentId)}
-            filterType="MOVIE"
-          />
-          <DiscoverySection 
-            existingIsbns={unifiedBooks.map(c => c.contentId)} 
-            existingTmdbIds={unifiedMovies.map(c => c.contentId)}
-            existingAnilistIds={unifiedAnimes.map(c => c.contentId)}
-            filterType="ANIME"
           />
         </div>
       )}
 
       {currentTab === 'BOOK' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-          {unifiedBooks.length > 0 && (
-            <DiscoverySection 
-              existingIsbns={unifiedBooks.map(c => c.contentId)} 
-              existingTmdbIds={unifiedMovies.map(c => c.contentId)}
-              filterType="BOOK"
-            />
-          )}
           <div>
             <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <h2 style={{ fontSize: '20px', fontWeight: 700 }}>📚 도서 컬렉션</h2>
-            <span style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>{filteredBooks.length}개</span>
-          </div>
-          {filteredBooks.length === 0 ? (
-            <div style={{ padding: '80px', textAlign: 'center', color: 'var(--text-tertiary)' }}>
-              조건에 맞는 도서가 없습니다.
+              <span style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>{filteredBooks.length}개</span>
             </div>
-          ) : (
-            viewMode === 'grid' ? <GridView contents={filteredBooks} router={router} type="BOOK" /> :
-            viewMode === 'list' ? <ListView contents={filteredBooks} router={router} /> :
-            <SpineView contents={filteredBooks} router={router} />
-          )}
+            {filteredBooks.length === 0 ? (
+              <div style={{ padding: '80px', textAlign: 'center', color: 'var(--text-tertiary)' }}>조건에 맞는 도서가 없습니다.</div>
+            ) : (
+              viewMode === 'grid' ? <GridView contents={filteredBooks} router={router} type="BOOK" /> :
+              viewMode === 'list' ? <ListView contents={filteredBooks} router={router} /> :
+              <SpineView contents={filteredBooks} router={router} />
+            )}
           </div>
         </div>
       )}
 
       {currentTab === 'MOVIE' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-          {unifiedMovies.length > 0 && (
-            <DiscoverySection 
-              existingIsbns={unifiedBooks.map(c => c.contentId)} 
-              existingTmdbIds={unifiedMovies.map(c => c.contentId)}
-              existingAnilistIds={unifiedAnimes.map(c => c.contentId)}
-              filterType="MOVIE"
-            />
-          )}
           <div>
             <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <h2 style={{ fontSize: '20px', fontWeight: 700 }}>🎬 영화 컬렉션</h2>
-            <span style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>{filteredMovies.length}개</span>
-          </div>
-          {filteredMovies.length === 0 ? (
-            <div style={{ padding: '80px', textAlign: 'center', color: 'var(--text-tertiary)' }}>
-              조건에 맞는 영화가 없습니다.
+              <span style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>{filteredMovies.length}개</span>
             </div>
-          ) : (
-            viewMode === 'grid' ? <GridView contents={filteredMovies} router={router} type="MOVIE" /> :
-            viewMode === 'list' ? <ListView contents={filteredMovies} router={router} /> :
-            <SpineView contents={filteredMovies} router={router} />
-          )}
+            {filteredMovies.length === 0 ? (
+              <div style={{ padding: '80px', textAlign: 'center', color: 'var(--text-tertiary)' }}>조건에 맞는 영화가 없습니다.</div>
+            ) : (
+              viewMode === 'grid' ? <GridView contents={filteredMovies} router={router} type="MOVIE" /> :
+              viewMode === 'list' ? <ListView contents={filteredMovies} router={router} /> :
+              <SpineView contents={filteredMovies} router={router} />
+            )}
           </div>
         </div>
       )}
 
       {currentTab === 'ANIME' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-          {unifiedAnimes.length > 0 && (
-            <DiscoverySection 
-              existingIsbns={unifiedBooks.map(c => c.contentId)} 
-              existingTmdbIds={unifiedMovies.map(c => c.contentId)}
-              existingAnilistIds={unifiedAnimes.map(c => c.contentId)}
-              filterType="ANIME"
-            />
-          )}
           <div>
             <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <h2 style={{ fontSize: '20px', fontWeight: 700 }}>🌸 애니 컬렉션</h2>
-            <span style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>{filteredAnimes.length}개</span>
-          </div>
-          {filteredAnimes.length === 0 ? (
-            <div style={{ padding: '80px', textAlign: 'center', color: 'var(--text-tertiary)' }}>
-              조건에 맞는 애니메이션이 없습니다.
+              <span style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>{filteredAnimes.length}개</span>
             </div>
-          ) : (
-            viewMode === 'grid' ? <GridView contents={filteredAnimes} router={router} type="ANIME" /> :
-            viewMode === 'list' ? <ListView contents={filteredAnimes} router={router} /> :
-            <SpineView contents={filteredAnimes} router={router} />
-          )}
+            {filteredAnimes.length === 0 ? (
+              <div style={{ padding: '80px', textAlign: 'center', color: 'var(--text-tertiary)' }}>조건에 맞는 애니메이션이 없습니다.</div>
+            ) : (
+              viewMode === 'grid' ? <GridView contents={filteredAnimes} router={router} type="ANIME" /> :
+              viewMode === 'list' ? <ListView contents={filteredAnimes} router={router} /> :
+              <SpineView contents={filteredAnimes} router={router} />
+            )}
           </div>
         </div>
+      )}
+
+      {currentTab === 'INSIGHT' && (
+        <InsightDashboard 
+          books={unifiedBooks}
+          movies={unifiedMovies}
+          animes={unifiedAnimes}
+        />
       )}
 
     </div>
   );
 }
 
-// ── 공통 카드 렌더러 (도서/영화 혼합 지원) ──
+// ── 공통 카드 렌더러 ──
 function renderContentGrid(title: string, icon: string, contents: ContentItem[], router: any) {
   if (contents.length === 0) return null;
   return (
@@ -285,7 +252,7 @@ function renderContentGrid(title: string, icon: string, contents: ContentItem[],
       </h3>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '16px' }}>
         {contents.map((item) => (
-          <div key={item.id} draggable onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: item.type === 'BOOK' ? 'book' : 'movie', id: item.id }))}>
+          <div key={item.id} draggable onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: item.type.toLowerCase(), id: item.id }))}>
             <PosterCard
               type={item.type}
               coverUrl={item.posterUrl || ''}
@@ -304,8 +271,8 @@ function renderContentGrid(title: string, icon: string, contents: ContentItem[],
   );
 }
 
-// ── 그리드 뷰: 왓챠 스타일 포스터 카루셀 ──
-function GridView({ contents, router, type }: { contents: ContentItem[]; router: any; type: 'BOOK'|'MOVIE' }) {
+// ── 그리드 뷰 ──
+function GridView({ contents, router, type }: { contents: ContentItem[]; router: any; type: 'BOOK'|'MOVIE'|'ANIME' }) {
   const activeLabel = type === 'BOOK' ? '읽는 중' : '보는 중';
   const activeStatus = type === 'BOOK' ? 'READING' : 'WATCHING';
   const wantStatus = type === 'BOOK' ? 'WANT_TO_READ' : 'WANT_TO_WATCH';
@@ -336,7 +303,7 @@ function ListView({ contents, router }: { contents: ContentItem[], router: any }
         <div
           key={item.id}
           draggable
-          onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: item.type === 'BOOK' ? 'book' : 'movie', id: item.id }))}
+          onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: item.type.toLowerCase(), id: item.id }))}
           style={{ display: 'grid', gridTemplateColumns: '48px 1fr 100px 80px 100px', gap: '12px', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--border-subtle)', cursor: 'grab', transition: 'background-color var(--transition-fast)' }}
           onClick={() => router.push(`/dashboard/${item.type.toLowerCase()}/${item.id}`)}
           onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-card-hover)'}
@@ -367,7 +334,7 @@ function SpineView({ contents, router }: { contents: ContentItem[], router: any 
             <div
               key={item.id}
               draggable
-              onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: item.type === 'BOOK' ? 'book' : 'movie', id: item.id }))}
+              onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: item.type.toLowerCase(), id: item.id }))}
               title={`${item.title} (${item.type === 'MOVIE' ? '영화' : '도서'})`}
               style={{ width: item.type === 'MOVIE' ? '30px' : '24px', height: `${60 + Math.random() * 30}px`, backgroundColor: item.dominantColor || 'var(--accent)', borderRadius: '2px', cursor: 'grab', transition: 'transform var(--transition-fast)', border: item.type === 'MOVIE' ? '1px solid rgba(0,0,0,0.2)' : 'none' }}
               onClick={() => router.push(`/dashboard/${item.type.toLowerCase()}/${item.id}`)}
@@ -383,7 +350,7 @@ function SpineView({ contents, router }: { contents: ContentItem[], router: any 
           <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '12px' }}>📖 진행/대기 중</h3>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', padding: '16px', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-lg)', minHeight: '60px', alignItems: 'flex-end' }}>
             {otherContents.map((item) => (
-              <div key={item.id} draggable onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: item.type === 'BOOK' ? 'book' : 'movie', id: item.id }))} title={item.title} style={{ width: item.type === 'MOVIE' ? '24px' : '20px', height: `${50 + Math.random() * 20}px`, backgroundColor: item.dominantColor || 'var(--text-tertiary)', borderRadius: '2px', cursor: 'grab', opacity: 0.6 }} onClick={() => router.push(`/dashboard/${item.type.toLowerCase()}/${item.id}`)} />
+              <div key={item.id} draggable onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: item.type.toLowerCase(), id: item.id }))} title={item.title} style={{ width: item.type === 'MOVIE' ? '24px' : '20px', height: `${50 + Math.random() * 20}px`, backgroundColor: item.dominantColor || 'var(--text-tertiary)', borderRadius: '2px', cursor: 'grab', opacity: 0.6 }} onClick={() => router.push(`/dashboard/${item.type.toLowerCase()}/${item.id}`)} />
             ))}
           </div>
         </section>

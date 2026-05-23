@@ -193,7 +193,7 @@ export async function updateMovieFolder(userMovieId: string, folderId: string | 
 }
 
 // ── 스마트 큐레이션을 위한 상위 태그 추출 ──
-export async function getTopTags(limit = 3, filterType?: 'BOOK' | 'MOVIE'): Promise<ActionResponse<string[]>> {
+export async function getTopTags(limit = 3, filterType?: 'BOOK' | 'MOVIE' | 'ANIME'): Promise<ActionResponse<string[]>> {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -252,6 +252,31 @@ export async function getTopTags(limit = 3, filterType?: 'BOOK' | 'MOVIE'): Prom
         }
       }
       return { success: true, message: '기본 태그 반환', data: ['명작'].slice(0, limit) };
+    } else if (filterType === 'ANIME') {
+      const { data: atData } = await supabase.from('anime_tags').select('tags(name)').eq('user_id', user.id).limit(20);
+      if (atData && atData.length > 0) {
+        const names = atData.map((a: any) => a.tags?.name).filter(Boolean);
+        if (names.length > 0) {
+          return { success: true, message: '태그 추출 완료', data: Array.from(new Set(names)).slice(0, limit) as string[] };
+        }
+      }
+      
+      const { data: uaData } = await supabase.from('user_animes').select('animes(genre)').eq('user_id', user.id).limit(10);
+      if (uaData && uaData.length > 0) {
+        const genres = uaData.map((ua: any) => ua.animes?.genre).filter(Boolean);
+        const extractedTags = new Set<string>();
+        genres.forEach(genreStr => {
+          const parts = genreStr.split(',');
+          parts.forEach((p: string) => {
+            if (p.trim()) extractedTags.add(p.trim());
+          });
+        });
+        const finalTags = Array.from(extractedTags);
+        if (finalTags.length > 0) {
+          return { success: true, message: '장르 기반 태그 추출 완료', data: finalTags.slice(0, limit) };
+        }
+      }
+      return { success: true, message: '기본 태그 반환', data: ['판타지'].slice(0, limit) };
     }
 
     // 기본 로직 (전체 탭이거나 위에서 데이터가 없을 경우)

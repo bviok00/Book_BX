@@ -39,7 +39,8 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
     async function loadCuration() {
       setIsLoading(true);
       try {
-        const tagRes = await getTopTags(2, filterType);
+        // limit을 20으로 늘려 더 다양한 태그 가져옴
+        const tagRes = await getTopTags(20, filterType);
         if (tagRes.success && tagRes.data && tagRes.data.length > 0) {
           const topTags = tagRes.data;
           setTags(topTags);
@@ -53,7 +54,7 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
               const fetchAnimes = !filterType || filterType === 'ANIME';
 
               const promises = [];
-              if (fetchBooks) promises.push(fetch(`/api/aladin?query=${encodeURIComponent(tag)}&maxResults=15`).then(res => res.json()).catch(() => ({ success: false, data: { item: [] } })));
+              if (fetchBooks) promises.push(fetch(`/api/aladin?query=${encodeURIComponent(tag)}&maxResults=20`).then(res => res.json()).catch(() => ({ success: false, data: { item: [] } })));
               if (fetchMovies) promises.push(fetch(`/api/tmdb?query=${encodeURIComponent(tag)}`).then(res => res.json()).catch(() => ({ success: false, data: { results: [] } })));
               if (fetchAnimes) promises.push(fetch(`/api/anilist?query=${encodeURIComponent(tag)}`).then(res => res.json()).catch(() => ({ success: false, data: { results: [] } })));
 
@@ -231,64 +232,117 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-      {tags.map(tag => {
-        const items = recommendations[tag];
-        if (!items || items.length === 0) return null;
+    <div style={{ display: 'flex', gap: '32px', position: 'relative', alignItems: 'flex-start' }}>
+      
+      {/* ── 좌측 스티키 앵커 네비게이션 ── */}
+      {!filterType && tags.length > 0 && (
+        <div style={{
+          position: 'sticky',
+          top: '100px',
+          width: '200px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+          paddingRight: '16px',
+          borderRight: '1px solid var(--border-subtle)',
+          maxHeight: 'calc(100vh - 120px)',
+          overflowY: 'auto'
+        }}>
+          <h3 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-tertiary)', marginBottom: '8px', paddingLeft: '12px' }}>
+            태그 네비게이션
+          </h3>
+          {tags.map(tag => (
+            <button
+              key={`nav-${tag}`}
+              onClick={() => {
+                const el = document.getElementById(`tag-section-${tag}`);
+                if (el) {
+                  const y = el.getBoundingClientRect().top + window.scrollY - 80;
+                  window.scrollTo({ top: y, behavior: 'smooth' });
+                }
+              }}
+              style={{
+                textAlign: 'left',
+                padding: '8px 12px',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-secondary)',
+                fontSize: '14px',
+                cursor: 'pointer',
+                borderRadius: 'var(--radius-sm)',
+                transition: 'all 0.2s'
+              }}
+              className="hover-bg"
+            >
+              # {tag}
+            </button>
+          ))}
+        </div>
+      )}
 
-        return (
-          <section key={tag}>
-            <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>🔭</span> #{tag} <span style={{ fontSize: '14px', fontWeight: 400, color: 'var(--text-secondary)' }}>관심사 기반 추천</span>
-            </h3>
-            
-            <HorizontalScroll>
-              {items.map(item => (
-                <div
-                  key={item.id}
-                  style={{
-                    minWidth: '140px',
-                    maxWidth: '140px',
-                    flexShrink: 0,
-                    scrollSnapAlign: 'start',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '8px',
-                    cursor: 'pointer'
-                  }}
-                  onClick={() => handleCardClick(item)}
-                  className="card-glow"
-                >
-                  <div style={{ position: 'relative', aspectRatio: '2/3', borderRadius: 'var(--radius-md)', overflow: 'hidden', backgroundColor: 'var(--bg-card)' }}>
-                    {item.posterUrl ? (
-                      <img src={item.posterUrl} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-tertiary)' }}>No Image</div>
-                    )}
-                    <div style={{ position: 'absolute', top: '8px', left: '8px', backgroundColor: 'rgba(0,0,0,0.6)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', color: '#fff', fontWeight: 600 }}>
-                      {item.type === 'BOOK' ? '도서' : '영화'}
-                    </div>
-                  </div>
-                  <div>
-                    <p className="line-clamp-1" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{item.title}</p>
-                    <p className="line-clamp-1" style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{item.creator}</p>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    isLoading={addingId === item.id}
-                    disabled={addingId !== null}
-                    onClick={(e) => { e.stopPropagation(); handleAddAndNavigate(item); }}
-                    style={{ width: '100%', fontSize: '12px', padding: '4px' }}
+      {/* ── 우측 추천 리스트 ── */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '48px', minWidth: 0 }}>
+        {tags.map((tag) => {
+          const curations = recommendations[tag] || [];
+          if (curations.length === 0) return null;
+
+          return (
+            <section key={tag} id={`tag-section-${tag}`} style={{ scrollMarginTop: '80px' }}>
+              <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h3 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  <span style={{ color: 'var(--accent)', marginRight: '8px' }}>#</span>
+                  {tag}
+                </h3>
+              </div>
+              
+              <HorizontalScroll>
+                {curations.map(item => (
+                  <div
+                    key={item.id}
+                    style={{
+                      minWidth: '140px',
+                      maxWidth: '140px',
+                      flexShrink: 0,
+                      scrollSnapAlign: 'start',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => handleCardClick(item)}
+                    className="card-glow"
                   >
-                    + 위시리스트 추가
-                  </Button>
-                </div>
-              ))}
-            </HorizontalScroll>
-          </section>
-        );
-      })}
+                    <div style={{ position: 'relative', aspectRatio: '2/3', borderRadius: 'var(--radius-md)', overflow: 'hidden', backgroundColor: 'var(--bg-card)' }}>
+                      {item.posterUrl ? (
+                        <img src={item.posterUrl} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-tertiary)' }}>No Image</div>
+                      )}
+                      <div style={{ position: 'absolute', top: '8px', left: '8px', backgroundColor: 'rgba(0,0,0,0.6)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', color: '#fff', fontWeight: 600 }}>
+                        {item.type === 'BOOK' ? '도서' : item.type === 'MOVIE' ? '영화' : '애니'}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="line-clamp-1" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{item.title}</p>
+                      <p className="line-clamp-1" style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{item.creator}</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      isLoading={addingId === item.id}
+                      disabled={addingId !== null}
+                      onClick={(e) => { e.stopPropagation(); handleAddAndNavigate(item); }}
+                      style={{ width: '100%', fontSize: '12px', padding: '4px' }}
+                    >
+                      + 위시리스트 추가
+                    </Button>
+                  </div>
+                ))}
+              </HorizontalScroll>
+            </section>
+          );
+        })}
+      </div>
 
       {/* Preview Modal */}
       {previewItem && (
@@ -323,7 +377,7 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
                 <img src={previewItem.posterUrl} style={{ height: '100%', borderRadius: 'var(--radius-md)', boxShadow: '0 8px 24px rgba(0,0,0,0.5)' }} />
                 <div style={{ color: '#fff', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
                   <div style={{ fontSize: '12px', background: 'var(--accent)', padding: '2px 8px', borderRadius: '4px', width: 'fit-content', marginBottom: '8px', fontWeight: 600 }}>
-                    {previewItem.type === 'BOOK' ? '도서 추천' : '영화 추천'}
+                    {previewItem.type === 'BOOK' ? '도서 추천' : previewItem.type === 'MOVIE' ? '영화 추천' : '애니 추천'}
                   </div>
                   <h2 style={{ fontSize: '24px', fontWeight: 800, lineHeight: 1.2, marginBottom: '4px' }}>{previewItem.title}</h2>
                   <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)' }}>{previewItem.creator}</p>
@@ -338,7 +392,9 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
                 <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6, maxHeight: '150px', overflowY: 'auto' }}>
                   {previewItem.type === 'BOOK' 
                     ? (previewItem.originalData.description || '책 소개가 없습니다.')
-                    : (previewItem.originalData.overview || '영화 소개가 없습니다.')}
+                    : previewItem.type === 'MOVIE' 
+                      ? (previewItem.originalData.overview || '영화 소개가 없습니다.')
+                      : (previewItem.originalData.description || '애니메이션 소개가 없습니다.')}
                 </p>
               </div>
 

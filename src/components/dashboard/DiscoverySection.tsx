@@ -33,6 +33,7 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
   const [isLoading, setIsLoading] = useState(true);
   const [previewItem, setPreviewItem] = useState<CurationItem | null>(null);
   const [addingId, setAddingId] = useState<string | null>(null);
+  const [localAddedIds, setLocalAddedIds] = useState<Set<string>>(new Set());
   const { showToast } = useToast();
   const router = useRouter();
 
@@ -270,7 +271,8 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
     } else {
       setIsLoading(false);
     }
-  }, [existingIsbns, existingTmdbIds, existingAnilistIds, filterType, baseItems]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterType, baseItems]);
 
   const handleAddAndNavigate = async (item: CurationItem) => {
     setAddingId(item.id);
@@ -286,6 +288,7 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
         });
         if (result.success && result.data) {
           showToast(result.message, 'success');
+          setLocalAddedIds(prev => new Set(prev).add(item.id));
         } else {
           showToast(result.message, 'error');
         }
@@ -306,6 +309,7 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
         });
         if (result.success && result.data) {
           showToast(result.message, 'success');
+          setLocalAddedIds(prev => new Set(prev).add(item.id));
         } else {
           showToast(result.message, 'error');
         }
@@ -326,6 +330,7 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
         });
         if (result.success && result.data) {
           showToast(result.message, 'success');
+          setLocalAddedIds(prev => new Set(prev).add(item.id));
         } else {
           showToast(result.message, 'error');
         }
@@ -416,13 +421,13 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
                   </div>
                   <Button
                     size="sm"
-                    variant="secondary"
+                    variant={localAddedIds.has(item.id) ? "primary" : "secondary"}
                     isLoading={addingId === item.id}
-                    disabled={addingId !== null}
+                    disabled={addingId !== null || localAddedIds.has(item.id)}
                     onClick={(e) => { e.stopPropagation(); handleAddAndNavigate(item); }}
                     style={{ width: '100%', fontSize: '12px', padding: '4px' }}
                   >
-                    + 위시리스트 추가
+                    {localAddedIds.has(item.id) ? '✔ 추가됨' : '+ 위시리스트 추가'}
                   </Button>
                 </div>
               ))}
@@ -477,13 +482,13 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
                   </div>
                   <Button
                     size="sm"
-                    variant="secondary"
+                    variant={localAddedIds.has(item.id) ? "primary" : "secondary"}
                     isLoading={addingId === item.id}
-                    disabled={addingId !== null}
+                    disabled={addingId !== null || localAddedIds.has(item.id)}
                     onClick={(e) => { e.stopPropagation(); handleAddAndNavigate(item); }}
                     style={{ width: '100%', fontSize: '12px', padding: '4px' }}
                   >
-                    + 위시리스트 추가
+                    {localAddedIds.has(item.id) ? '✔ 추가됨' : '+ 위시리스트 추가'}
                   </Button>
                 </div>
               ))}
@@ -553,9 +558,10 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
                   variant="primary" 
                   style={{ flex: 1, fontWeight: 700 }}
                   isLoading={addingId === previewItem.id}
+                  disabled={addingId !== null || localAddedIds.has(previewItem.id)}
                   onClick={() => handleAddAndNavigate(previewItem)}
                 >
-                  + 위시리스트 추가
+                  {localAddedIds.has(previewItem.id) ? '✔ 추가됨' : '+ 위시리스트 추가'}
                 </Button>
                 <Button 
                   size="lg" 

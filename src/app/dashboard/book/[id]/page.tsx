@@ -36,13 +36,15 @@ export default async function BookDetailPage({
     userBookQuery = userBookQuery.eq('isbn', userBookId);
   }
 
-  const [userBookRes, foldersRes] = await Promise.all([
+  const [userBookRes, foldersRes, profileRes] = await Promise.all([
     userBookQuery.single(),
-    supabase.from('folders').select('*').eq('user_id', user.id).order('sort_order')
+    supabase.from('folders').select('*').eq('user_id', user.id).order('sort_order'),
+    supabase.from('profiles').select('*').eq('id', user.id).single()
   ]);
 
   let userBook = userBookRes.data;
   let book = userBook?.books;
+  let profile = profileRes.data;
   let isReadOnly = false;
 
   // 서재에 없는 경우 알라딘 API에서 직접 가져오기 (읽기 전용 모드)
@@ -224,7 +226,7 @@ export default async function BookDetailPage({
 
         {/* 마이크로 메모 (왓챠 코멘트 스타일) */}
         <div style={{ flex: '1 1 400px' }}>
-          <BookNotesFeed userBookId={userBook.id} notes={notes} user={user} />
+          <BookNotesFeed userBookId={userBook.id} notes={notes} user={user} profile={profile} />
         </div>
       </div>
 

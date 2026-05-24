@@ -39,13 +39,15 @@ export default async function MovieDetailPage({
     userMovieQuery = userMovieQuery.eq('tmdb_id', parseInt(userMovieId, 10));
   }
 
-  const [userMovieRes, foldersRes] = await Promise.all([
+  const [userMovieRes, foldersRes, profileRes] = await Promise.all([
     userMovieQuery.single(),
-    supabase.from('folders').select('*').eq('user_id', user.id).order('sort_order')
+    supabase.from('folders').select('*').eq('user_id', user.id).order('sort_order'),
+    supabase.from('profiles').select('*').eq('id', user.id).single()
   ]);
 
   let userMovie = userMovieRes.data;
   let movie = userMovie?.movies;
+  let profile = profileRes.data;
   let isReadOnly = false;
 
   // 서재에 없는 경우 TMDB API에서 직접 가져오기 (읽기 전용 모드)
@@ -175,7 +177,7 @@ export default async function MovieDetailPage({
 
         {/* 마이크로 메모 */}
         <div style={{ flex: '1 1 400px' }}>
-          {!isReadOnly && <MovieNotesFeed userMovieId={userMovie.id} notes={notes} user={user} />}
+          {!isReadOnly && <MovieNotesFeed userMovieId={userMovie.id} notes={notes} user={user} profile={profile} />}
         </div>
       </div>
 

@@ -47,7 +47,6 @@ export async function updateProfile(
         display_name: displayName,
         yearly_goal: yearlyGoal,
         is_public: isPublic,
-        updated_at: new Date().toISOString(),
       })
       .eq('id', user.id);
 

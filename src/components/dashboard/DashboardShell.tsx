@@ -13,6 +13,7 @@ interface DashboardShellProps {
   user: User;
   profile: Profile | null;
   folders?: any[];
+  hideSidebar?: boolean;
 }
 
 export default function DashboardShell({
@@ -20,19 +21,22 @@ export default function DashboardShell({
   user,
   profile,
   folders = [],
+  hideSidebar = false,
 }: DashboardShellProps) {
   return (
     <>
-      <div className="dashboard-shell">
+      <div className={`dashboard-shell ${hideSidebar ? 'no-sidebar' : ''}`}>
         {/* ZONE 1: 헤더 */}
         <div className="zone-header">
           <Header user={user} profile={profile} />
         </div>
 
         {/* ZONE 2: 좌측 사이드바 */}
-        <div className="zone-sidebar">
-          <Sidebar folders={folders} />
-        </div>
+        {!hideSidebar && (
+          <div className="zone-sidebar">
+            <Sidebar folders={folders} />
+          </div>
+        )}
 
         {/* ZONE 3: 중앙 메인 패널 */}
         <div

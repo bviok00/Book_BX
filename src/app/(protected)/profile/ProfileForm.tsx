@@ -45,17 +45,17 @@ export default function ProfileForm({ user, profile }: ProfileFormProps) {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       <div>
         <label style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>
           로그인 계정
         </label>
-        <div style={{ padding: '10px 12px', backgroundColor: 'var(--bg-primary)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', fontSize: '14px' }}>
+        <div style={{ padding: '8px 12px', backgroundColor: 'var(--bg-primary)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', fontSize: '14px' }}>
           {user.email}
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <Input 
           label="닉네임" 
           name="displayName" 
@@ -72,7 +72,7 @@ export default function ProfileForm({ user, profile }: ProfileFormProps) {
           defaultValue={profile?.yearly_goal || 0} 
         />
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '0px' }}>
           <input 
             type="checkbox" 
             id="isPublic" 
@@ -89,7 +89,7 @@ export default function ProfileForm({ user, profile }: ProfileFormProps) {
           type="submit" 
           isLoading={isLoading} 
           style={{ 
-            marginTop: '8px', 
+            marginTop: '4px', 
             backgroundColor: '#1a1a1a', 
             color: '#ffffff',
             border: '1px solid #333'
@@ -99,7 +99,7 @@ export default function ProfileForm({ user, profile }: ProfileFormProps) {
         </Button>
       </form>
 
-      <div style={{ marginTop: '16px', paddingTop: '24px', borderTop: '1px solid var(--border-subtle)' }}>
+      <div style={{ marginTop: '4px', paddingTop: '12px', borderTop: '1px solid var(--border-subtle)' }}>
         <Button 
           onClick={handleLogout} 
           isLoading={isLoggingOut}

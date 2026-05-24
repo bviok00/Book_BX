@@ -35,13 +35,15 @@ export default async function AnimeDetailPage({
     userAnimeQuery = userAnimeQuery.eq('anilist_id', parseInt(userAnimeId, 10));
   }
 
-  const [userAnimeRes, foldersRes] = await Promise.all([
+  const [userAnimeRes, foldersRes, profileRes] = await Promise.all([
     userAnimeQuery.single(),
-    supabase.from('folders').select('*').eq('user_id', user.id).order('sort_order')
+    supabase.from('folders').select('*').eq('user_id', user.id).order('sort_order'),
+    supabase.from('profiles').select('*').eq('id', user.id).single()
   ]);
 
   let userAnime = userAnimeRes.data;
   let anime = userAnime?.animes;
+  let profile = profileRes.data;
   let isReadOnly = false;
 
   // 서재에 없는 경우 (읽기 전용 모드: AniList 검색)
@@ -289,8 +291,8 @@ export default async function AnimeDetailPage({
         </div>
 
         {/* 마이크로 메모 */}
-        <div style={{ flex: '1 1 400px' }}>
-          {!isReadOnly && <AnimeNotesFeed userAnimeId={userAnime.id} notes={notes} user={user} />}
+        <div className="lg:col-span-1">
+          {!isReadOnly && <AnimeNotesFeed userAnimeId={userAnime.id} notes={notes} user={user} profile={profile} />}
         </div>
       </div>
 

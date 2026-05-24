@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-export default function MovieNotesFeed({ userMovieId, notes, user }: { userMovieId: string, notes: any[], user: any }) {
+export default function MovieNotesFeed({ userMovieId, notes, user, profile }: { userMovieId: string, notes: any[], user: any, profile?: any }) {
   const router = useRouter();
   const [content, setContent] = useState('');
   const [page, setPage] = useState(''); // Here page acts as timeReference, e.g. "01:23:45"
@@ -177,10 +177,10 @@ export default function MovieNotesFeed({ userMovieId, notes, user }: { userMovie
             <div key={note.id} className="glass-card" style={{ padding: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                 <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: 'var(--accent)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 600 }}>
-                  {user.email?.charAt(0).toUpperCase()}
+                  {profile?.display_name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
                 </div>
                 <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                  {user.email?.split('@')[0]}
+                  {profile?.display_name || user.email?.split('@')[0]}
                 </span>
                 {note.page_reference && (
                   <span style={{ fontSize: '11px', color: 'var(--accent)', background: 'var(--accent-light)', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>

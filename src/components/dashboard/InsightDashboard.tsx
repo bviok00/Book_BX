@@ -265,73 +265,40 @@ export default function InsightDashboard({ books, movies, animes }: InsightDashb
         )}
       </section>
 
-      {/* ── 4. 활동 잔디 & 기존 차트 ── */}
-      <section className="glass-card" style={{ padding: '24px' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          🔥 탐사 궤적 <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-tertiary)' }}>(최근 6개월)</span>
+      {/* ── 4. 미디어 및 평점 분포 ── */}
+      <section className="glass-card" style={{ padding: '32px 24px' }}>
+        <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '32px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          📊 미디어 및 평점 분석
         </h2>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '48px' }}>
-          {activityMap.map(([date, count]) => (
-            <div
-              key={date}
-              title={`${date}: ${count}개 작품 추가`}
-              style={{
-                width: '12px',
-                height: '12px',
-                borderRadius: '2px',
-                backgroundColor: count === 0 ? 'var(--border-subtle)' :
-                                count === 1 ? 'rgba(99, 102, 241, 0.4)' :
-                                count <= 3 ? 'rgba(99, 102, 241, 0.7)' :
-                                '#6366f1',
-                transition: 'transform 0.1s ease',
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.2)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-            />
-          ))}
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
-          <div>
-            <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '16px', textAlign: 'center' }}>미디어 비중</h3>
-            <div style={{ height: '200px' }}>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '48px' }}>
+          {/* 미디어 비중 */}
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '24px', textAlign: 'center' }}>미디어 비중</h3>
+            <div style={{ height: '260px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={typeData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={5}>
+                  <Pie data={typeData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={70} outerRadius={95} paddingAngle={5}>
                     {typeData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} stroke="rgba(255,255,255,0.1)" />)}
                   </Pie>
                   <RechartsTooltip contentStyle={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '8px' }} />
-                  <Legend verticalAlign="bottom" height={36} />
+                  <Legend verticalAlign="bottom" height={36} iconType="circle" />
                 </PieChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          <div>
-            <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '16px', textAlign: 'center' }}>상태 요약</h3>
-            <div style={{ height: '200px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={statusData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={0} outerRadius={70}>
-                    {statusData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} stroke="rgba(255,255,255,0.1)" />)}
-                  </Pie>
-                  <RechartsTooltip contentStyle={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '8px' }} />
-                  <Legend verticalAlign="bottom" height={36} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div>
-            <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '16px', textAlign: 'center' }}>평점 분포</h3>
-            <div style={{ height: '200px' }}>
+          {/* 평점 분포 */}
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '24px', textAlign: 'center' }}>평점 분포</h3>
+            <div style={{ height: '260px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={ratingData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                  <XAxis dataKey="rating" stroke="var(--text-tertiary)" tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} />
-                  <YAxis allowDecimals={false} stroke="var(--text-tertiary)" tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} />
+                  <XAxis dataKey="rating" stroke="var(--text-tertiary)" tick={{ fill: 'var(--text-secondary)', fontSize: 13 }} />
+                  <YAxis allowDecimals={false} stroke="var(--text-tertiary)" tick={{ fill: 'var(--text-secondary)', fontSize: 13 }} />
                   <RechartsTooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} contentStyle={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '8px' }} />
-                  <Bar dataKey="count" name="작품 수" fill="var(--accent)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="count" name="작품 수" fill="var(--accent)" radius={[4, 4, 0, 0]} maxBarSize={60} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

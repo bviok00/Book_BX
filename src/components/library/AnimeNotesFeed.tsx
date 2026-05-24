@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react';
 import { addAnimeNote, deleteAnimeNote } from '@/app/dashboard/anime-actions';
 
 
-export default function AnimeNotesFeed({ userAnimeId, notes = [], user }: { userAnimeId: string, notes: any[], user: any }) {
+export default function AnimeNotesFeed({ userAnimeId, notes = [], user, profile }: { userAnimeId: string, notes: any[], user: any, profile?: any }) {
   const [noteInput, setNoteInput] = useState('');
   const [isPending, startTransition] = useTransition();
 
@@ -119,10 +119,10 @@ export default function AnimeNotesFeed({ userAnimeId, notes = [], user }: { user
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontWeight: 'bold', fontSize: '12px' }}>
-                    {user?.email?.charAt(0).toUpperCase() || 'U'}
+                    {profile?.display_name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
                   </div>
                   <div>
-                    <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>{user?.email?.split('@')[0]}</div>
+                    <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>{profile?.display_name || user?.email?.split('@')[0]}</div>
                     <div style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>
                       {getRelativeTime(note.created_at)}
                     </div>

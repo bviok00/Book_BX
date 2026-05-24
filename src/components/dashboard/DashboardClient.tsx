@@ -111,7 +111,7 @@ export default function DashboardClient({
 
   // 필터링 (도서)
   let filteredBooks = unifiedBooks;
-  if (bookStatus && bookStatus !== 'ALL') {
+  if (bookStatus && bookStatus !== 'ALL' && bookStatus !== 'RECOMMEND') {
     filteredBooks = filteredBooks.filter(c => c.status === bookStatus);
   }
   if (bookFolderId) {
@@ -120,7 +120,7 @@ export default function DashboardClient({
 
   // 필터링 (영화)
   let filteredMovies = unifiedMovies;
-  if (movieStatus && movieStatus !== 'ALL') {
+  if (movieStatus && movieStatus !== 'ALL' && movieStatus !== 'RECOMMEND') {
     filteredMovies = filteredMovies.filter(c => c.status === movieStatus);
   }
   if (movieFolderId) {
@@ -129,7 +129,7 @@ export default function DashboardClient({
 
   // 필터링 (애니)
   let filteredAnimes = unifiedAnimes;
-  if (animeStatus && animeStatus !== 'ALL') {
+  if (animeStatus && animeStatus !== 'ALL' && animeStatus !== 'RECOMMEND') {
     filteredAnimes = filteredAnimes.filter(c => c.status === animeStatus);
   }
   if (animeFolderId) {
@@ -311,21 +311,19 @@ export default function DashboardClient({
               baseItems={unifiedBooks}
             />
           )}
-          {bookStatus !== 'RECOMMEND' && (
-            <div>
-              <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h2 style={{ fontSize: '20px', fontWeight: 700 }}>📚 도서 컬렉션</h2>
-                <span style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>{filteredBooks.length}개</span>
-              </div>
-              {filteredBooks.length === 0 ? (
-                <div style={{ padding: '80px', textAlign: 'center', color: 'var(--text-tertiary)' }}>조건에 맞는 도서가 없습니다.</div>
-              ) : (
-                viewMode === 'grid' ? <GridView contents={filteredBooks} router={router} type="BOOK" /> :
-                viewMode === 'list' ? <ListView contents={filteredBooks} router={router} /> :
-                <SpineView contents={filteredBooks} router={router} />
-              )}
+          <div>
+            <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 700 }}>📚 도서 컬렉션</h2>
+              <span style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>{filteredBooks.length}개</span>
             </div>
-          )}
+            {filteredBooks.length === 0 ? (
+              <div style={{ padding: '80px', textAlign: 'center', color: 'var(--text-tertiary)' }}>조건에 맞는 도서가 없습니다.</div>
+            ) : (
+              viewMode === 'grid' ? <GridView contents={filteredBooks} router={router} type="BOOK" /> :
+              viewMode === 'list' ? <ListView contents={filteredBooks} router={router} /> :
+              <SpineView contents={filteredBooks} router={router} />
+            )}
+          </div>
         </div>
       )}
 
@@ -340,21 +338,19 @@ export default function DashboardClient({
               baseItems={unifiedMovies}
             />
           )}
-          {movieStatus !== 'RECOMMEND' && (
-            <div>
-              <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h2 style={{ fontSize: '20px', fontWeight: 700 }}>🎬 영화 컬렉션</h2>
-                <span style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>{filteredMovies.length}개</span>
-              </div>
-              {filteredMovies.length === 0 ? (
-                <div style={{ padding: '80px', textAlign: 'center', color: 'var(--text-tertiary)' }}>조건에 맞는 영화가 없습니다.</div>
-              ) : (
-                viewMode === 'grid' ? <GridView contents={filteredMovies} router={router} type="MOVIE" /> :
-                viewMode === 'list' ? <ListView contents={filteredMovies} router={router} /> :
-                <SpineView contents={filteredMovies} router={router} />
-              )}
+          <div>
+            <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 700 }}>🎬 영화 컬렉션</h2>
+              <span style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>{filteredMovies.length}개</span>
             </div>
-          )}
+            {filteredMovies.length === 0 ? (
+              <div style={{ padding: '80px', textAlign: 'center', color: 'var(--text-tertiary)' }}>조건에 맞는 영화가 없습니다.</div>
+            ) : (
+              viewMode === 'grid' ? <GridView contents={filteredMovies} router={router} type="MOVIE" /> :
+              viewMode === 'list' ? <ListView contents={filteredMovies} router={router} /> :
+              <SpineView contents={filteredMovies} router={router} />
+            )}
+          </div>
         </div>
       )}
 
@@ -369,21 +365,19 @@ export default function DashboardClient({
               baseItems={unifiedAnimes}
             />
           )}
-          {animeStatus !== 'RECOMMEND' && (
-            <div>
-              <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h2 style={{ fontSize: '20px', fontWeight: 700 }}>🌸 애니 컬렉션</h2>
-                <span style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>{filteredAnimes.length}개</span>
-              </div>
-              {filteredAnimes.length === 0 ? (
-                <div style={{ padding: '80px', textAlign: 'center', color: 'var(--text-tertiary)' }}>조건에 맞는 애니메이션이 없습니다.</div>
-              ) : (
-                viewMode === 'grid' ? <GridView contents={filteredAnimes} router={router} type="ANIME" /> :
-                viewMode === 'list' ? <ListView contents={filteredAnimes} router={router} /> :
-                <SpineView contents={filteredAnimes} router={router} />
-              )}
+          <div>
+            <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 700 }}>🌸 애니 컬렉션</h2>
+              <span style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>{filteredAnimes.length}개</span>
             </div>
-          )}
+            {filteredAnimes.length === 0 ? (
+              <div style={{ padding: '80px', textAlign: 'center', color: 'var(--text-tertiary)' }}>조건에 맞는 애니메이션이 없습니다.</div>
+            ) : (
+              viewMode === 'grid' ? <GridView contents={filteredAnimes} router={router} type="ANIME" /> :
+              viewMode === 'list' ? <ListView contents={filteredAnimes} router={router} /> :
+              <SpineView contents={filteredAnimes} router={router} />
+            )}
+          </div>
         </div>
       )}
 

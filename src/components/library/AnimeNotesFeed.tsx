@@ -239,7 +239,7 @@ export default function AnimeNotesFeed({ userAnimeId, mediaId, notes = [], user,
                       {new Date(note.created_at).toLocaleString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(/. /g, '.').replace(':', ':')}
                     </span>
                     <button 
-                      onClick={() => handleDelete(note.id)}
+                      onClick={() => handleDeleteNote(note.id)}
                       style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', fontSize: '12px', marginLeft: '8px' }}
                       className="hover-scale"
                     >

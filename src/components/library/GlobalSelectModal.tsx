@@ -125,7 +125,7 @@ export default function GlobalSelectModal({ isOpen, onClose, onSelect }: GlobalS
       style={{ display: 'flex', gap: '16px', padding: '16px', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', cursor: 'pointer', transition: 'all 0.2s', alignItems: 'center' }}
     >
       {(anime.coverImage?.large || anime.coverImage?.extraLarge) ? (
-        <img src={anime.coverImage.large || anime.coverImage.extraLarge} alt={anime.title.romaji || ''} style={{ width: '60px', height: '85px', objectFit: 'cover', borderRadius: '4px', boxShadow: 'var(--shadow-sm)' }} />
+        <img src={anime.coverImage.large || anime.coverImage.extraLarge || ''} alt={anime.title.romaji || ''} style={{ width: '60px', height: '85px', objectFit: 'cover', borderRadius: '4px', boxShadow: 'var(--shadow-sm)' }} />
       ) : (
         <div style={{ width: '60px', height: '85px', background: 'var(--bg-secondary)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🌸</div>
       )}

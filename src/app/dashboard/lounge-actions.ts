@@ -129,31 +129,40 @@ export async function getMyLibraryItems(): Promise<ActionResponse<any[]>> {
     const items: any[] = [];
     
     if (bookRes.data) {
-      bookRes.data.forEach(b => items.push({
-        id: b.id,
-        type: 'BOOK',
-        title: b.books?.title || '제목 없음',
-        posterUrl: b.books?.cover_url || '',
-        rating: b.rating
-      }));
+      bookRes.data.forEach((b: any) => {
+        const bookData = Array.isArray(b.books) ? b.books[0] : b.books;
+        items.push({
+          id: b.id,
+          type: 'BOOK',
+          title: bookData?.title || '제목 없음',
+          posterUrl: bookData?.cover_url || '',
+          rating: b.rating
+        });
+      });
     }
     if (movieRes.data) {
-      movieRes.data.forEach(m => items.push({
-        id: m.id,
-        type: 'MOVIE',
-        title: m.movies?.title || '제목 없음',
-        posterUrl: m.movies?.poster_url || '',
-        rating: m.rating
-      }));
+      movieRes.data.forEach((m: any) => {
+        const movieData = Array.isArray(m.movies) ? m.movies[0] : m.movies;
+        items.push({
+          id: m.id,
+          type: 'MOVIE',
+          title: movieData?.title || '제목 없음',
+          posterUrl: movieData?.poster_url || '',
+          rating: m.rating
+        });
+      });
     }
     if (animeRes.data) {
-      animeRes.data.forEach(a => items.push({
-        id: a.id,
-        type: 'ANIME',
-        title: a.animes?.title || '제목 없음',
-        posterUrl: a.animes?.poster_url || '',
-        rating: a.rating
-      }));
+      animeRes.data.forEach((a: any) => {
+        const animeData = Array.isArray(a.animes) ? a.animes[0] : a.animes;
+        items.push({
+          id: a.id,
+          type: 'ANIME',
+          title: animeData?.title || '제목 없음',
+          posterUrl: animeData?.poster_url || '',
+          rating: a.rating
+        });
+      });
     }
 
     return { success: true, message: '조회 완료', data: items };

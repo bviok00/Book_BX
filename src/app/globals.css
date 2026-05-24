@@ -303,3 +303,23 @@ body {
   .zone-sidebar { display: none; }
   .zone-right { display: none; }
 }
+
+/* ── 라운지 핀터레스트 스타일 Hover 효과 ── */
+.lounge-card-group:hover .glass-card {
+  transform: translateY(-4px);
+  border-color: var(--accent);
+  box-shadow: var(--shadow-lg);
+}
+
+.lounge-card-group:hover .lounge-card-overlay {
+  opacity: 1 !important;
+}
+
+.lounge-card-group:hover .lounge-card-btn {
+  transform: translateY(0) !important;
+}
+
+.lounge-card-group:hover .lounge-card-content {
+  color: var(--text-primary) !important;
+}
+

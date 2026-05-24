@@ -315,6 +315,40 @@ export default function AnimeDetailHero({ userAnime, anime, folders = [], isRead
                       ))}
                     </div>
                   </div>
+
+                  {/* 라운지에 리뷰 쓰기 */}
+                  <div style={{ marginLeft: '12px' }}>
+                    <button
+                      onClick={() => {
+                        const params = new URLSearchParams({
+                          type: 'ANIME',
+                          id: userAnime.id,
+                          title: anime.title,
+                          poster: anime.poster_url || '',
+                          rating: optimisticRating.toString()
+                        });
+                        router.push(`/dashboard/lounge/write?${params.toString()}`);
+                      }}
+                      style={{
+                        padding: '10px 16px',
+                        borderRadius: 'var(--radius-full)',
+                        border: '1px solid rgba(255,255,255,0.3)',
+                        backgroundColor: 'rgba(255,255,255,0.1)',
+                        color: '#fff',
+                        fontWeight: 600,
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        backdropFilter: 'blur(5px)',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                      className="hover-bg hover-scale"
+                    >
+                      ☕ 라운지에 리뷰 쓰기
+                    </button>
+                  </div>
                 </>
               )}
             </div>

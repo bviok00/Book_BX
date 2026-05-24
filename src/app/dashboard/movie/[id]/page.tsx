@@ -177,7 +177,7 @@ export default async function MovieDetailPage({
 
         {/* 마이크로 메모 */}
         <div style={{ flex: '1 1 400px' }}>
-          {!isReadOnly && <MovieNotesFeed userMovieId={userMovie.id} notes={notes} user={user} profile={profile} />}
+          {!isReadOnly && <MovieNotesFeed userMovieId={userMovie.id} mediaId={movie.tmdb_id.toString()} notes={notes} user={user} profile={profile} />}
         </div>
       </div>
 

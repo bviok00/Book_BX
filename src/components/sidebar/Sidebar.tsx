@@ -40,10 +40,11 @@ export default function Sidebar({ folders = [] }: { folders?: Folder[] }) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   
-  let currentTab = (searchParams.get('tab') as 'HOME' | 'BOOK' | 'MOVIE' | 'ANIME') || 'HOME';
+  let currentTab = (searchParams.get('tab') as 'HOME' | 'BOOK' | 'MOVIE' | 'ANIME' | 'INSIGHT' | 'LOUNGE') || 'HOME';
   if (pathname.startsWith('/dashboard/book')) currentTab = 'BOOK';
   if (pathname.startsWith('/dashboard/movie')) currentTab = 'MOVIE';
   if (pathname.startsWith('/dashboard/anime')) currentTab = 'ANIME';
+  if (pathname.startsWith('/dashboard/lounge')) currentTab = 'LOUNGE';
 
   const bookStatus = searchParams.get('bookStatus') || 'RECOMMEND';
   const movieStatus = searchParams.get('movieStatus') || 'RECOMMEND';

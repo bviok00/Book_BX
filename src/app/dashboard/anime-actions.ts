@@ -118,7 +118,7 @@ export async function addAnimeTags(userAnimeId: string, tags: string[]): Promise
         }).select().maybeSingle();
       }
     }
-    
+
     revalidatePath('/dashboard');
     return { success: true, message: '태그가 추가되었습니다.' };
   } catch (error: unknown) {
@@ -128,19 +128,37 @@ export async function addAnimeTags(userAnimeId: string, tags: string[]): Promise
 }
 
 // ── 애니 노트 추가 ──
-export async function addAnimeNote(userAnimeId: string, content: string): Promise<ActionResponse> {
+export async function addAnimeNote(userAnimeId: string, content: string, timeRef?: string, tags?: string[]): Promise<ActionResponse> {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, message: '인증이 필요합니다.' };
 
-        const { error } = await supabase.from('granular_notes').insert({
-          user_id: user.id,
-          user_anime_id: userAnimeId,
-          content,
-        });
+    const { data: newNote, error } = await supabase.from('granular_notes').insert({
+      user_id: user.id,
+      user_anime_id: userAnimeId,
+      content,
+      page_reference: timeRef || null,
+    }).select('id').single();
 
     if (error) return { success: false, message: `노트 작성 실패: ${error.message}` };
+
+    if (newNote && tags && tags.length > 0) {
+      for (const tagName of tags) {
+        let tagId = '';
+        const { data: existingTag } = await supabase.from('tags').select('id').eq('user_id', user.id).eq('name', tagName).single();
+        if (existingTag) {
+          tagId = existingTag.id;
+        } else {
+          const { data: createdTag } = await supabase.from('tags').insert({ user_id: user.id, name: tagName }).select('id').single();
+          if (createdTag) tagId = createdTag.id;
+        }
+
+        if (tagId) {
+          await supabase.from('note_tags').insert({ note_id: newNote.id, tag_id: tagId });
+        }
+      }
+    }
 
     revalidatePath('/dashboard');
     return { success: true, message: '노트가 작성되었습니다.' };
@@ -179,7 +197,7 @@ export async function updateAnimeStatus(userAnimeId: string, status: AnimeStatus
       .eq('id', userAnimeId);
 
     if (error) return { success: false, message: `상태 업데이트 실패: ${error.message}` };
-    
+
     revalidatePath('/dashboard');
     return { success: true, message: '상태가 업데이트되었습니다.' };
   } catch (error: unknown) {
@@ -244,7 +262,7 @@ export async function updateAnimeFolder(userAnimeId: string, folderId: string | 
       .eq('id', userAnimeId);
 
     if (error) return { success: false, message: `폴더 이동 실패: ${error.message}` };
-    
+
     revalidatePath('/dashboard');
     return { success: true, message: '폴더가 변경되었습니다.' };
   } catch (error: unknown) {

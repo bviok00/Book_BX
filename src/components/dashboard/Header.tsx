@@ -5,7 +5,7 @@ import type { Profile } from '@/types';
 import type { User } from '@supabase/supabase-js';
 import { SearchInput } from '@/components/ui/Input';
 import ThemeToggle from '@/components/ui/ThemeToggle';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState, Suspense } from 'react';
 import ContentSearch from '@/components/library/ContentSearch';
 
@@ -14,17 +14,27 @@ interface HeaderProps {
   profile: Profile | null;
 }
 
-type TabMode = 'HOME' | 'BOOK' | 'MOVIE' | 'ANIME' | 'INSIGHT';
+type TabMode = 'HOME' | 'BOOK' | 'MOVIE' | 'ANIME' | 'INSIGHT' | 'LOUNGE';
 
 function HeaderContent({ user, profile }: HeaderProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const currentTab = (searchParams.get('tab') as TabMode) || 'HOME';
+  const pathname = usePathname();
+  
+  let currentTab: TabMode = (searchParams.get('tab') as TabMode) || 'HOME';
+  if (pathname.startsWith('/dashboard/lounge')) {
+    currentTab = 'LOUNGE';
+  }
+  
   const yearlyGoal = profile?.yearly_goal || 0;
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const handleTabChange = (tab: TabMode) => {
-    router.push(`/dashboard?tab=${tab}`);
+    if (tab === 'LOUNGE') {
+      router.push('/dashboard/lounge');
+    } else {
+      router.push(`/dashboard?tab=${tab}`);
+    }
   };
 
   return (
@@ -73,6 +83,7 @@ function HeaderContent({ user, profile }: HeaderProps) {
               { key: 'MOVIE', label: '🎬 영화' },
               { key: 'ANIME', label: '🌸 애니' },
               { key: 'INSIGHT', label: '💡 인사이트' },
+              { key: 'LOUNGE', label: '☕ 라운지' },
             ].map(tab => (
               <button
                 key={tab.key}

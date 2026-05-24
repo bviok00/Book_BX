@@ -226,7 +226,7 @@ export default async function BookDetailPage({
 
         {/* 마이크로 메모 (왓챠 코멘트 스타일) */}
         <div style={{ flex: '1 1 400px' }}>
-          <BookNotesFeed userBookId={userBook.id} notes={notes} user={user} profile={profile} />
+          <BookNotesFeed userBookId={userBook.id} mediaId={book.isbn} notes={notes} user={user} profile={profile} />
         </div>
       </div>
 

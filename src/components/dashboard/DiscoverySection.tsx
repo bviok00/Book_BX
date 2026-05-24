@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { addBookToLibrary } from '@/app/dashboard/actions';
 import { addMovieToLibrary } from '@/app/dashboard/movie-actions';
@@ -36,10 +36,13 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
   const [localAddedIds, setLocalAddedIds] = useState<Set<string>>(new Set());
   const { showToast } = useToast();
   const router = useRouter();
+  const hasLoadedRef = useRef(false);
 
   useEffect(() => {
     async function loadCuration() {
+      if (hasLoadedRef.current) return;
       setIsLoading(true);
+      hasLoadedRef.current = true;
       try {
         const { 
           getSimilarMovies, 

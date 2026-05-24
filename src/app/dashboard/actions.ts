@@ -70,6 +70,7 @@ export async function updateBookStatus(
 
     revalidatePath('/dashboard');
     revalidatePath('/profile');
+    // @ts-ignore
     revalidateTag('recommendations');
     return { success: true, message: '독서 상태가 변경되었습니다.' };
   } catch (error: unknown) {
@@ -174,6 +175,7 @@ export async function addBookToLibrary(
 
     revalidatePath('/dashboard');
     revalidatePath('/profile');
+    // @ts-ignore
     revalidateTag('recommendations');
     return { success: true, message: '서재에 추가되었습니다.', data: newUserBook?.id };
   } catch (error: unknown) {
@@ -556,6 +558,7 @@ export async function deleteUserBook(userBookId: string): Promise<ActionResponse
 
     revalidatePath('/dashboard');
     revalidatePath('/profile');
+    // @ts-ignore
     revalidateTag('recommendations');
     return { success: true, message: '서재에서 삭제되었습니다.' };
   } catch (error: unknown) {

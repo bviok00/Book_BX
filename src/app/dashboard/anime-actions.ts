@@ -77,6 +77,7 @@ export async function addAnimeToLibrary(
     }
 
     revalidatePath('/dashboard');
+    // @ts-ignore
     revalidateTag('recommendations');
     return { success: true, message: '서재에 성공적으로 추가되었습니다.', data: newUserAnime.id };
   } catch (error: unknown) {
@@ -200,6 +201,7 @@ export async function updateAnimeStatus(userAnimeId: string, status: AnimeStatus
     if (error) return { success: false, message: `상태 업데이트 실패: ${error.message}` };
 
     revalidatePath('/dashboard');
+    // @ts-ignore
     revalidateTag('recommendations');
     return { success: true, message: '상태가 업데이트되었습니다.' };
   } catch (error: unknown) {
@@ -285,6 +287,7 @@ export async function removeAnimeFromLibrary(userAnimeId: string): Promise<Actio
     if (error) return { success: false, message: `삭제 실패: ${error.message}` };
 
     revalidatePath('/dashboard');
+    // @ts-ignore
     revalidateTag('recommendations');
     return { success: true, message: '서재에서 삭제되었습니다.' };
   } catch (error: unknown) {

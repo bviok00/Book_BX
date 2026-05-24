@@ -577,8 +577,7 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
                   size="lg" 
                   variant="primary" 
                   style={{ flex: 1, fontWeight: 700 }}
-                  isLoading={addingId === previewItem.id}
-                  disabled={addingId !== null || localAddedIds.has(previewItem.id)}
+                  disabled={localAddedIds.has(previewItem.id)}
                   onClick={() => handleAddAndNavigate(previewItem)}
                 >
                   {localAddedIds.has(previewItem.id) ? '✔ 추가됨' : '+ 위시리스트 추가'}

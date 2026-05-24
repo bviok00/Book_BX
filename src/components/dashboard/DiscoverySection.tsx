@@ -8,6 +8,7 @@ import { useToast } from '@/components/ui/Toast';
 import Button from '@/components/ui/Button';
 import HorizontalScroll from '@/components/ui/HorizontalScroll';
 import { TMDB_IMAGE_BASE, TMDB_POSTER_SIZE } from '@/types/tmdb';
+import type { ContentItem } from '@/types';
 
 interface DiscoverySectionProps {
   existingIsbns: string[];
@@ -53,7 +54,6 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
           const items: CurationItem[] = [];
 
           if (base.type === 'BOOK') {
-            const b = base.originalData || {};
             const res = await getSimilarBooks(base.contentId, base.genre || null, base.creator || null);
             if (res.success && res.data) {
               res.data.forEach((item: any) => {

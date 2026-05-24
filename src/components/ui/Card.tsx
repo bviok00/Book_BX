@@ -62,7 +62,7 @@ export default function Card({
 
 // ── 포스터 카드: 책/영화 표지 전용 (이미지 + 제목 오버레이 + 호버 액션) ──
 interface PosterCardProps {
-  type?: 'BOOK' | 'MOVIE';
+  type?: 'BOOK' | 'MOVIE' | 'ANIME';
   coverUrl: string;
   title: string;
   author?: string;

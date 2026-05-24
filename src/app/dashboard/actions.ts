@@ -466,7 +466,7 @@ export async function getUserTags() {
 }
 
 // ── 폴더 관련 액션 ──
-export async function createFolder(name: string, mediaType: 'BOOK' | 'MOVIE' = 'BOOK'): Promise<ActionResponse> {
+export async function createFolder(name: string, mediaType: 'BOOK' | 'MOVIE' | 'ANIME' = 'BOOK'): Promise<ActionResponse> {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();

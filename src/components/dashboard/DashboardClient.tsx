@@ -1,7 +1,7 @@
 'use client';
 // ZONE 3: 대시보드 메인 클라이언트 — 상단 탭(HOME/BOOK/MOVIE/INSIGHT) 완전 분할
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import type { Folder, ReadingSession, ContentItem } from '@/types';
 import { PosterCard } from '@/components/ui/Card';
@@ -28,6 +28,11 @@ export default function DashboardClient({
   readingSessions,
 }: DashboardClientProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -230,7 +235,7 @@ export default function DashboardClient({
                   </div>
                 ) : (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '16px' }}>
-                    {[...wishlistItems].sort(() => 0.5 - Math.random()).slice(0, 6).map(item => (
+                    {(mounted ? [...wishlistItems].sort(() => 0.5 - Math.random()) : [...wishlistItems]).slice(0, 6).map(item => (
                       <div key={item.id} draggable onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: item.type.toLowerCase(), id: item.id }))}>
                         <PosterCard
                           type={item.type}
@@ -488,7 +493,7 @@ function SpineView({ contents, router }: { contents: ContentItem[], router: any 
               draggable
               onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: item.type.toLowerCase(), id: item.id }))}
               title={`${item.title} (${item.type === 'MOVIE' ? '영화' : '도서'})`}
-              style={{ width: item.type === 'MOVIE' ? '30px' : '24px', height: `${60 + Math.random() * 30}px`, backgroundColor: item.dominantColor || 'var(--accent)', borderRadius: '2px', cursor: 'grab', transition: 'transform var(--transition-fast)', border: item.type === 'MOVIE' ? '1px solid rgba(0,0,0,0.2)' : 'none' }}
+              style={{ width: item.type === 'MOVIE' ? '30px' : '24px', height: `${60 + ((item.title.length * 7) % 30)}px`, backgroundColor: item.dominantColor || 'var(--accent)', borderRadius: '2px', cursor: 'grab', transition: 'transform var(--transition-fast)', border: item.type === 'MOVIE' ? '1px solid rgba(0,0,0,0.2)' : 'none' }}
               onClick={() => router.push(`/dashboard/${item.type.toLowerCase()}/${item.id}`)}
               onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
               onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
@@ -502,7 +507,7 @@ function SpineView({ contents, router }: { contents: ContentItem[], router: any 
           <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '12px' }}>📖 진행/대기 중</h3>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', padding: '16px', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-lg)', minHeight: '60px', alignItems: 'flex-end' }}>
             {otherContents.map((item) => (
-              <div key={item.id} draggable onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: item.type.toLowerCase(), id: item.id }))} title={item.title} style={{ width: item.type === 'MOVIE' ? '24px' : '20px', height: `${50 + Math.random() * 20}px`, backgroundColor: item.dominantColor || 'var(--text-tertiary)', borderRadius: '2px', cursor: 'grab', opacity: 0.6 }} onClick={() => router.push(`/dashboard/${item.type.toLowerCase()}/${item.id}`)} />
+              <div key={item.id} draggable onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: item.type.toLowerCase(), id: item.id }))} title={item.title} style={{ width: item.type === 'MOVIE' ? '24px' : '20px', height: `${50 + ((item.title.length * 7) % 20)}px`, backgroundColor: item.dominantColor || 'var(--text-tertiary)', borderRadius: '2px', cursor: 'grab', opacity: 0.6 }} onClick={() => router.push(`/dashboard/${item.type.toLowerCase()}/${item.id}`)} />
             ))}
           </div>
         </section>

@@ -7,9 +7,9 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar
 } from 'recharts';
-import type { ContentItem } from '@/types/dashboard';
+import type { ContentItem } from '@/types';
 import { getUserTags } from '@/app/dashboard/actions';
-import PosterCard from './PosterCard';
+import { PosterCard } from '@/components/ui/Card';
 
 interface InsightDashboardProps {
   books: ContentItem[];

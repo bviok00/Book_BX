@@ -60,35 +60,9 @@ export async function getSimilarBooks(isbn: string, categoryName: string | null,
   if (!ALADIN_TTB_KEY) return { success: false, data: [] };
   
   try {
-    // 1. 카테고리 기반 검색
-    let keyword = '';
-    if (categoryName) {
-      const parts = categoryName.split('>');
-      keyword = parts[parts.length - 1].trim();
-    }
-    
-    if (keyword) {
-      const url = new URL('http://www.aladin.co.kr/ttb/api/ItemSearch.aspx');
-      url.searchParams.append('ttbkey', ALADIN_TTB_KEY);
-      url.searchParams.append('Query', keyword);
-      url.searchParams.append('QueryType', 'Keyword');
-      url.searchParams.append('MaxResults', '15');
-      url.searchParams.append('start', '1');
-      url.searchParams.append('SearchTarget', 'Book');
-      url.searchParams.append('output', 'js');
-      url.searchParams.append('Version', '20131101');
-      url.searchParams.append('OptResult', 'ebookList,usedList,reviewList');
-      
-      const res = await fetch(url.toString());
-      if (res.ok) {
-        const data = await res.json();
-        if (data.item && data.item.length > 0) {
-          return { success: true, data: data.item };
-        }
-      }
-    }
-    
-    // 2. 카테고리가 없거나 결과가 없으면 작가 검색
+    let recommended: any[] = [];
+
+    // 1. 작가 기반 검색 (동일 저자의 다른 인기작 우선)
     if (author) {
       const authorName = author.split('(')[0].split(',')[0].trim();
       if (authorName) {
@@ -96,21 +70,60 @@ export async function getSimilarBooks(isbn: string, categoryName: string | null,
         url.searchParams.append('ttbkey', ALADIN_TTB_KEY);
         url.searchParams.append('Query', authorName);
         url.searchParams.append('QueryType', 'Author');
-        url.searchParams.append('MaxResults', '15');
+        url.searchParams.append('MaxResults', '10');
         url.searchParams.append('start', '1');
         url.searchParams.append('SearchTarget', 'Book');
         url.searchParams.append('output', 'js');
         url.searchParams.append('Version', '20131101');
+        url.searchParams.append('Sort', 'SalesPoint'); // 판매량 순 정렬
         url.searchParams.append('OptResult', 'ebookList,usedList,reviewList');
         
         const res = await fetch(url.toString());
         if (res.ok) {
           const data = await res.json();
-          if (data.item && data.item.length > 0) {
-            return { success: true, data: data.item };
+          if (data.item) {
+            // 현재 책 제외
+            recommended = data.item.filter((item: any) => item.isbn13 !== isbn && item.isbn !== isbn);
           }
         }
       }
+    }
+    
+    // 2. 작가 책이 충분하지 않으면 카테고리(키워드) 기반 베스트셀러 추가
+    if (recommended.length < 15 && categoryName) {
+      const parts = categoryName.split('>');
+      const keyword = parts[parts.length - 1].trim();
+      
+      if (keyword && keyword !== '국내도서' && keyword !== '외국도서') {
+        const url = new URL('http://www.aladin.co.kr/ttb/api/ItemSearch.aspx');
+        url.searchParams.append('ttbkey', ALADIN_TTB_KEY);
+        url.searchParams.append('Query', keyword);
+        url.searchParams.append('QueryType', 'Keyword');
+        url.searchParams.append('MaxResults', '15');
+        url.searchParams.append('start', '1');
+        url.searchParams.append('SearchTarget', 'Book');
+        url.searchParams.append('output', 'js');
+        url.searchParams.append('Version', '20131101');
+        url.searchParams.append('Sort', 'SalesPoint'); // 판매량 순 정렬 (이상한 책 방지)
+        url.searchParams.append('OptResult', 'ebookList,usedList,reviewList');
+        
+        const res = await fetch(url.toString());
+        if (res.ok) {
+          const data = await res.json();
+          if (data.item) {
+            const newItems = data.item.filter((item: any) => 
+              item.isbn13 !== isbn && 
+              item.isbn !== isbn && 
+              !recommended.some(r => r.isbn13 === item.isbn13)
+            );
+            recommended = [...recommended, ...newItems];
+          }
+        }
+      }
+    }
+    
+    if (recommended.length > 0) {
+      return { success: true, data: recommended.slice(0, 15) };
     }
   } catch (error) {
     console.error('getSimilarBooks error:', error);

@@ -2,13 +2,14 @@
 // ZONE 2: 사이드바 — 상단 탭(HOME/BOOK/MOVIE) 상태에 따라 동적 렌더링
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useState, useTransition } from 'react';
-import { createFolder, updateBookFolder, updateFolder, deleteFolder } from '@/app/dashboard/actions';
+import { useState, useTransition, useEffect } from 'react';
+import { createFolder, updateBookFolder, updateFolder, deleteFolder, getUserTags } from '@/app/dashboard/actions';
 import { updateMovieFolder } from '@/app/dashboard/movie-actions';
 import { updateAnimeFolder } from '@/app/dashboard/anime-actions';
 import type { Folder } from '@/types';
 
 const BOOK_STATUS_TABS = [
+  { key: 'RECOMMEND', label: '추천 도서', icon: '✨' },
   { key: 'ALL', label: '전체 도서', icon: '📖' },
   { key: 'READING', label: '읽는 중', icon: '📘' },
   { key: 'WANT_TO_READ', label: '위시리스트', icon: '💜' },
@@ -17,6 +18,7 @@ const BOOK_STATUS_TABS = [
 ];
 
 const MOVIE_STATUS_TABS = [
+  { key: 'RECOMMEND', label: '추천 영화', icon: '✨' },
   { key: 'ALL', label: '전체 영화', icon: '🎬' },
   { key: 'WATCHING', label: '보는 중', icon: '🍿' },
   { key: 'WANT_TO_WATCH', label: '위시리스트', icon: '💜' },
@@ -25,6 +27,7 @@ const MOVIE_STATUS_TABS = [
 ];
 
 const ANIME_STATUS_TABS = [
+  { key: 'RECOMMEND', label: '추천 애니', icon: '✨' },
   { key: 'ALL', label: '전체 애니', icon: '🌸' },
   { key: 'WATCHING', label: '보는 중', icon: '🔥' },
   { key: 'WANT_TO_WATCH', label: '위시리스트', icon: '💜' },
@@ -42,9 +45,9 @@ export default function Sidebar({ folders = [] }: { folders?: Folder[] }) {
   if (pathname.startsWith('/dashboard/movie')) currentTab = 'MOVIE';
   if (pathname.startsWith('/dashboard/anime')) currentTab = 'ANIME';
 
-  const bookStatus = searchParams.get('bookStatus') || 'ALL';
-  const movieStatus = searchParams.get('movieStatus') || 'ALL';
-  const animeStatus = searchParams.get('animeStatus') || 'ALL';
+  const bookStatus = searchParams.get('bookStatus') || 'RECOMMEND';
+  const movieStatus = searchParams.get('movieStatus') || 'RECOMMEND';
+  const animeStatus = searchParams.get('animeStatus') || 'RECOMMEND';
   const activeBookFolderId = searchParams.get('bookFolderId');
   const activeMovieFolderId = searchParams.get('movieFolderId');
   const activeAnimeFolderId = searchParams.get('animeFolderId');
@@ -55,6 +58,15 @@ export default function Sidebar({ folders = [] }: { folders?: Folder[] }) {
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [editingFolderName, setEditingFolderName] = useState('');
   const [hoveredFolderId, setHoveredFolderId] = useState<string | null>(null);
+  const [tags, setTags] = useState<any[]>([]);
+
+  useEffect(() => {
+    getUserTags().then(res => {
+      if (res.success && res.data) {
+        setTags(res.data);
+      }
+    });
+  }, []);
 
   const bookFolders = folders.filter(f => f.media_type === 'BOOK' || !f.media_type);
   const movieFolders = folders.filter(f => f.media_type === 'MOVIE');
@@ -66,6 +78,11 @@ export default function Sidebar({ folders = [] }: { folders?: Folder[] }) {
       if (value === null) current.delete(key);
       else current.set(key, value);
     });
+
+    if (!current.has('tab') && currentTab !== 'HOME') {
+      current.set('tab', currentTab);
+    }
+
     const search = current.toString();
     const query = search ? `?${search}` : '';
     router.push(`/dashboard${query}`);
@@ -152,7 +169,17 @@ export default function Sidebar({ folders = [] }: { folders?: Folder[] }) {
             onDragStart={(e) => onDragStart(e, folder.id)}
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => onDrop(e, folder.id, type)}
-            onClick={() => updateQueryParams({ [paramKey]: activeFolderId === folder.id ? null : folder.id })}
+            onClick={() => {
+              const statusKey = type === 'BOOK' ? 'bookStatus' : type === 'MOVIE' ? 'movieStatus' : 'animeStatus';
+              const currentStatus = type === 'BOOK' ? bookStatus : type === 'MOVIE' ? movieStatus : animeStatus;
+              const updates: Record<string, string | null> = {
+                [paramKey]: activeFolderId === folder.id ? null : folder.id
+              };
+              if (activeFolderId !== folder.id && currentStatus === 'RECOMMEND') {
+                updates[statusKey] = 'ALL';
+              }
+              updateQueryParams(updates);
+            }}
             onMouseEnter={() => setHoveredFolderId(folder.id)}
             onMouseLeave={() => setHoveredFolderId(null)}
             style={{
@@ -237,7 +264,7 @@ export default function Sidebar({ folders = [] }: { folders?: Folder[] }) {
               {BOOK_STATUS_TABS.map((tab) => (
                 <button
                   key={tab.key}
-                  onClick={() => updateQueryParams({ bookStatus: tab.key === 'ALL' ? null : tab.key, bookFolderId: null })}
+                  onClick={() => updateQueryParams({ bookStatus: tab.key, bookFolderId: null })}
                   className="focus-ring"
                   style={{
                     display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px',
@@ -276,7 +303,7 @@ export default function Sidebar({ folders = [] }: { folders?: Folder[] }) {
               {MOVIE_STATUS_TABS.map((tab) => (
                 <button
                   key={tab.key}
-                  onClick={() => updateQueryParams({ movieStatus: tab.key === 'ALL' ? null : tab.key, movieFolderId: null })}
+                  onClick={() => updateQueryParams({ movieStatus: tab.key, movieFolderId: null })}
                   className="focus-ring"
                   style={{
                     display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px',
@@ -315,7 +342,7 @@ export default function Sidebar({ folders = [] }: { folders?: Folder[] }) {
               {ANIME_STATUS_TABS.map((tab) => (
                 <button
                   key={tab.key}
-                  onClick={() => updateQueryParams({ animeStatus: tab.key === 'ALL' ? null : tab.key, animeFolderId: null })}
+                  onClick={() => updateQueryParams({ animeStatus: tab.key, animeFolderId: null })}
                   className="focus-ring"
                   style={{
                     display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px',
@@ -341,6 +368,46 @@ export default function Sidebar({ folders = [] }: { folders?: Folder[] }) {
           </section>
         </div>
       )}
+
+      {/* ── 개념 태그 (모든 탭 공통) ── */}
+      <section style={{ padding: '0 16px', marginTop: 'auto', borderTop: '1px solid var(--border-subtle)', paddingTop: '24px' }}>
+        <h3
+          style={{
+            fontSize: '11px',
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            color: 'var(--text-tertiary)',
+            letterSpacing: '0.5px',
+            marginBottom: '12px',
+          }}
+        >
+          🏷️ 내 개념 태그
+        </h3>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignContent: 'flex-start', gap: '6px', maxHeight: '150px', overflowY: 'auto', paddingBottom: '16px' }}>
+          {tags.length === 0 ? (
+            <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>태그가 없습니다.</span>
+          ) : (
+            tags.map(tag => (
+              <span
+                key={tag.id}
+                onClick={() => router.push(`/dashboard/tags/${tag.id}`)}
+                style={{
+                  backgroundColor: 'var(--bg-secondary)',
+                  color: 'var(--text-secondary)',
+                  padding: '3px 8px',
+                  borderRadius: 'var(--radius-full)',
+                  fontSize: '11px',
+                  border: '1px solid var(--border-subtle)',
+                  cursor: 'pointer'
+                }}
+                className="hover-bg"
+              >
+                #{tag.name}
+              </span>
+            ))
+          )}
+        </div>
+      </section>
 
     </aside>
   );

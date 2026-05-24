@@ -32,9 +32,9 @@ export default function DashboardClient({
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentTab = (searchParams.get('tab') as TabMode) || 'HOME';
-  const bookStatus = searchParams.get('bookStatus');
-  const movieStatus = searchParams.get('movieStatus');
-  const animeStatus = searchParams.get('animeStatus');
+  const bookStatus = searchParams.get('bookStatus') || 'RECOMMEND';
+  const movieStatus = searchParams.get('movieStatus') || 'RECOMMEND';
+  const animeStatus = searchParams.get('animeStatus') || 'RECOMMEND';
   const bookFolderId = searchParams.get('bookFolderId');
   const movieFolderId = searchParams.get('movieFolderId');
   const animeFolderId = searchParams.get('animeFolderId');
@@ -167,90 +167,218 @@ export default function DashboardClient({
 
       {/* ── 본문 영역 ── */}
       {currentTab === 'HOME' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-          <DiscoverySection 
-            existingIsbns={unifiedBooks.map(c => c.contentId)} 
-            existingTmdbIds={unifiedMovies.map(c => c.contentId)}
-            existingAnilistIds={unifiedAnimes.map(c => c.contentId)}
-          />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '48px', padding: '16px 0' }}>
+          
+          {/* Section 1: 이어보기 (Continue) */}
+          {(() => {
+            const continueItems = [
+              ...unifiedBooks.filter(b => b.status === 'READING'),
+              ...unifiedMovies.filter(m => m.status === 'WATCHING'),
+              ...unifiedAnimes.filter(a => a.status === 'WATCHING')
+            ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            
+            return (
+              <section>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
+                  <span style={{ fontSize: '24px' }}>🚀</span>
+                  <h2 style={{ fontSize: '20px', fontWeight: 700 }}>계속 탐사하기</h2>
+                </div>
+                {continueItems.length === 0 ? (
+                  <div style={{ padding: '40px', textAlign: 'center', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-lg)', color: 'var(--text-tertiary)' }}>
+                    현재 진행 중인 작품이 없습니다.
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '16px' }}>
+                    {continueItems.map(item => (
+                      <div key={item.id} draggable onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: item.type.toLowerCase(), id: item.id }))}>
+                        <PosterCard
+                          type={item.type}
+                          coverUrl={item.posterUrl || ''}
+                          title={item.title}
+                          author={item.creator || undefined}
+                          status={item.status}
+                          dominantColor={item.dominantColor || undefined}
+                          progressPct={item.progressPct}
+                          rating={item.rating}
+                          onClick={() => router.push(`/dashboard/${item.type.toLowerCase()}/${item.id}`)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+            );
+          })()}
+
+          {/* Section 2: 오늘의 위시리스트 탐사 */}
+          {(() => {
+            const wishlistItems = [
+              ...unifiedBooks.filter(b => b.status === 'WANT_TO_READ'),
+              ...unifiedMovies.filter(m => m.status === 'WANT_TO_WATCH'),
+              ...unifiedAnimes.filter(a => a.status === 'WANT_TO_WATCH')
+            ];
+            
+            return (
+              <section>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
+                  <span style={{ fontSize: '24px' }}>🌌</span>
+                  <h2 style={{ fontSize: '20px', fontWeight: 700 }}>위시리스트 랜덤 픽</h2>
+                </div>
+                {wishlistItems.length === 0 ? (
+                  <div style={{ padding: '40px', textAlign: 'center', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-lg)', color: 'var(--text-tertiary)' }}>
+                    위시리스트가 비어있습니다. 새로운 별을 담아보세요!
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '16px' }}>
+                    {[...wishlistItems].sort(() => 0.5 - Math.random()).slice(0, 6).map(item => (
+                      <div key={item.id} draggable onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: item.type.toLowerCase(), id: item.id }))}>
+                        <PosterCard
+                          type={item.type}
+                          coverUrl={item.posterUrl || ''}
+                          title={item.title}
+                          author={item.creator || undefined}
+                          status={item.status}
+                          dominantColor={item.dominantColor || undefined}
+                          progressPct={item.progressPct}
+                          rating={item.rating}
+                          onClick={() => router.push(`/dashboard/${item.type.toLowerCase()}/${item.id}`)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+            );
+          })()}
+
+          {/* Section 3: 최근 발견한 별들 */}
+          {(() => {
+            const recentItems = [
+              ...unifiedBooks,
+              ...unifiedMovies,
+              ...unifiedAnimes
+            ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 12);
+            
+            return (
+              <section>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
+                  <span style={{ fontSize: '24px' }}>✨</span>
+                  <h2 style={{ fontSize: '20px', fontWeight: 700 }}>최근 발견한 별들</h2>
+                </div>
+                {recentItems.length === 0 ? (
+                  <div style={{ padding: '40px', textAlign: 'center', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-lg)', color: 'var(--text-tertiary)' }}>
+                    아직 라이브러리가 비어있습니다.
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '16px' }}>
+                    {recentItems.map(item => (
+                      <div key={item.id} draggable onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: item.type.toLowerCase(), id: item.id }))}>
+                        <PosterCard
+                          type={item.type}
+                          coverUrl={item.posterUrl || ''}
+                          title={item.title}
+                          author={item.creator || undefined}
+                          status={item.status}
+                          dominantColor={item.dominantColor || undefined}
+                          progressPct={item.progressPct}
+                          rating={item.rating}
+                          onClick={() => router.push(`/dashboard/${item.type.toLowerCase()}/${item.id}`)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+            );
+          })()}
+
         </div>
       )}
 
       {currentTab === 'BOOK' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-          {unifiedBooks.length > 0 && !bookFolderId && (!bookStatus || bookStatus === 'ALL') && viewMode === 'grid' && (
+          {unifiedBooks.length > 0 && bookStatus === 'RECOMMEND' && viewMode === 'grid' && (
             <DiscoverySection 
               existingIsbns={unifiedBooks.map(c => c.contentId)} 
               existingTmdbIds={unifiedMovies.map(c => c.contentId)}
               existingAnilistIds={unifiedAnimes.map(c => c.contentId)}
               filterType="BOOK"
+              baseItems={unifiedBooks}
             />
           )}
-          <div>
-            <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: 700 }}>📚 도서 컬렉션</h2>
-              <span style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>{filteredBooks.length}개</span>
+          {bookStatus !== 'RECOMMEND' && (
+            <div>
+              <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h2 style={{ fontSize: '20px', fontWeight: 700 }}>📚 도서 컬렉션</h2>
+                <span style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>{filteredBooks.length}개</span>
+              </div>
+              {filteredBooks.length === 0 ? (
+                <div style={{ padding: '80px', textAlign: 'center', color: 'var(--text-tertiary)' }}>조건에 맞는 도서가 없습니다.</div>
+              ) : (
+                viewMode === 'grid' ? <GridView contents={filteredBooks} router={router} type="BOOK" /> :
+                viewMode === 'list' ? <ListView contents={filteredBooks} router={router} /> :
+                <SpineView contents={filteredBooks} router={router} />
+              )}
             </div>
-            {filteredBooks.length === 0 ? (
-              <div style={{ padding: '80px', textAlign: 'center', color: 'var(--text-tertiary)' }}>조건에 맞는 도서가 없습니다.</div>
-            ) : (
-              viewMode === 'grid' ? <GridView contents={filteredBooks} router={router} type="BOOK" /> :
-              viewMode === 'list' ? <ListView contents={filteredBooks} router={router} /> :
-              <SpineView contents={filteredBooks} router={router} />
-            )}
-          </div>
+          )}
         </div>
       )}
 
       {currentTab === 'MOVIE' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-          {unifiedMovies.length > 0 && !movieFolderId && (!movieStatus || movieStatus === 'ALL') && viewMode === 'grid' && (
+          {unifiedMovies.length > 0 && movieStatus === 'RECOMMEND' && viewMode === 'grid' && (
             <DiscoverySection 
               existingIsbns={unifiedBooks.map(c => c.contentId)} 
               existingTmdbIds={unifiedMovies.map(c => c.contentId)}
               existingAnilistIds={unifiedAnimes.map(c => c.contentId)}
               filterType="MOVIE"
+              baseItems={unifiedMovies}
             />
           )}
-          <div>
-            <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: 700 }}>🎬 영화 컬렉션</h2>
-              <span style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>{filteredMovies.length}개</span>
+          {movieStatus !== 'RECOMMEND' && (
+            <div>
+              <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h2 style={{ fontSize: '20px', fontWeight: 700 }}>🎬 영화 컬렉션</h2>
+                <span style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>{filteredMovies.length}개</span>
+              </div>
+              {filteredMovies.length === 0 ? (
+                <div style={{ padding: '80px', textAlign: 'center', color: 'var(--text-tertiary)' }}>조건에 맞는 영화가 없습니다.</div>
+              ) : (
+                viewMode === 'grid' ? <GridView contents={filteredMovies} router={router} type="MOVIE" /> :
+                viewMode === 'list' ? <ListView contents={filteredMovies} router={router} /> :
+                <SpineView contents={filteredMovies} router={router} />
+              )}
             </div>
-            {filteredMovies.length === 0 ? (
-              <div style={{ padding: '80px', textAlign: 'center', color: 'var(--text-tertiary)' }}>조건에 맞는 영화가 없습니다.</div>
-            ) : (
-              viewMode === 'grid' ? <GridView contents={filteredMovies} router={router} type="MOVIE" /> :
-              viewMode === 'list' ? <ListView contents={filteredMovies} router={router} /> :
-              <SpineView contents={filteredMovies} router={router} />
-            )}
-          </div>
+          )}
         </div>
       )}
 
       {currentTab === 'ANIME' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-          {unifiedAnimes.length > 0 && !animeFolderId && (!animeStatus || animeStatus === 'ALL') && viewMode === 'grid' && (
+          {unifiedAnimes.length > 0 && animeStatus === 'RECOMMEND' && viewMode === 'grid' && (
             <DiscoverySection 
               existingIsbns={unifiedBooks.map(c => c.contentId)} 
               existingTmdbIds={unifiedMovies.map(c => c.contentId)}
               existingAnilistIds={unifiedAnimes.map(c => c.contentId)}
               filterType="ANIME"
+              baseItems={unifiedAnimes}
             />
           )}
-          <div>
-            <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: 700 }}>🌸 애니 컬렉션</h2>
-              <span style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>{filteredAnimes.length}개</span>
+          {animeStatus !== 'RECOMMEND' && (
+            <div>
+              <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h2 style={{ fontSize: '20px', fontWeight: 700 }}>🌸 애니 컬렉션</h2>
+                <span style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>{filteredAnimes.length}개</span>
+              </div>
+              {filteredAnimes.length === 0 ? (
+                <div style={{ padding: '80px', textAlign: 'center', color: 'var(--text-tertiary)' }}>조건에 맞는 애니메이션이 없습니다.</div>
+              ) : (
+                viewMode === 'grid' ? <GridView contents={filteredAnimes} router={router} type="ANIME" /> :
+                viewMode === 'list' ? <ListView contents={filteredAnimes} router={router} /> :
+                <SpineView contents={filteredAnimes} router={router} />
+              )}
             </div>
-            {filteredAnimes.length === 0 ? (
-              <div style={{ padding: '80px', textAlign: 'center', color: 'var(--text-tertiary)' }}>조건에 맞는 애니메이션이 없습니다.</div>
-            ) : (
-              viewMode === 'grid' ? <GridView contents={filteredAnimes} router={router} type="ANIME" /> :
-              viewMode === 'list' ? <ListView contents={filteredAnimes} router={router} /> :
-              <SpineView contents={filteredAnimes} router={router} />
-            )}
-          </div>
+          )}
         </div>
       )}
 

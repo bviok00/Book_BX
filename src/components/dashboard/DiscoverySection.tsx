@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getTopTags } from '@/app/dashboard/movie-actions';
 import { addBookToLibrary } from '@/app/dashboard/actions';
 import { addMovieToLibrary } from '@/app/dashboard/movie-actions';
 import { useToast } from '@/components/ui/Toast';
@@ -15,6 +14,7 @@ interface DiscoverySectionProps {
   existingTmdbIds: string[];
   existingAnilistIds?: string[];
   filterType?: 'BOOK' | 'MOVIE' | 'ANIME';
+  baseItems?: ContentItem[];
 }
 
 interface CurationItem {
@@ -26,9 +26,8 @@ interface CurationItem {
   originalData: any;
 }
 
-export default function DiscoverySection({ existingIsbns, existingTmdbIds, existingAnilistIds = [], filterType }: DiscoverySectionProps) {
-  const [tags, setTags] = useState<string[]>([]);
-  const [recommendations, setRecommendations] = useState<Record<string, CurationItem[]>>({});
+export default function DiscoverySection({ existingIsbns, existingTmdbIds, existingAnilistIds = [], filterType, baseItems = [] }: DiscoverySectionProps) {
+  const [baseTitleRecs, setBaseTitleRecs] = useState<Record<string, { title: string, items: CurationItem[] }>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [previewItem, setPreviewItem] = useState<CurationItem | null>(null);
   const [addingId, setAddingId] = useState<string | null>(null);
@@ -39,55 +38,41 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
     async function loadCuration() {
       setIsLoading(true);
       try {
-        // limit을 20으로 늘려 더 다양한 태그 가져옴
-        const tagRes = await getTopTags(20, filterType);
-        if (tagRes.success && tagRes.data && tagRes.data.length > 0) {
-          const topTags = tagRes.data;
-          setTags(topTags);
+        const { getSimilarMovies, getSimilarAnimes, getSimilarBooks } = await import('@/app/dashboard/similar-actions');
+        
+        // 4점 이상인 작품들만 후보로 선정 (없으면 전체에서 선정)
+        let candidates = baseItems.filter(item => item.rating && item.rating >= 4);
+        if (candidates.length === 0) candidates = baseItems;
+        
+        // 무작위로 최대 3개 추출
+        const randomBases = [...candidates].sort(() => 0.5 - Math.random()).slice(0, 3);
+        
+        const newRecs: Record<string, { title: string, items: CurationItem[] }> = {};
 
-          const newRecs: Record<string, CurationItem[]> = {};
+        for (const base of randomBases) {
+          const items: CurationItem[] = [];
 
-          for (const tag of topTags) {
-              // 필터에 따라 필요한 API만 요청
-              const fetchBooks = !filterType || filterType === 'BOOK';
-              const fetchMovies = !filterType || filterType === 'MOVIE';
-              const fetchAnimes = !filterType || filterType === 'ANIME';
-
-              const promises = [];
-              if (fetchBooks) promises.push(fetch(`/api/aladin?query=${encodeURIComponent(tag)}&maxResults=20`).then(res => res.json()).catch(() => ({ success: false, data: { item: [] } })));
-              if (fetchMovies) promises.push(fetch(`/api/tmdb?query=${encodeURIComponent(tag)}`).then(res => res.json()).catch(() => ({ success: false, data: { results: [] } })));
-              if (fetchAnimes) promises.push(fetch(`/api/anilist?query=${encodeURIComponent(tag)}`).then(res => res.json()).catch(() => ({ success: false, data: { results: [] } })));
-
-              const resps = await Promise.all(promises);
-              
-              let bookJson = { success: false, data: { item: [] } };
-              let movieJson = { success: false, data: { results: [] } };
-              let animeJson = { success: false, data: { results: [] } };
-
-              let i = 0;
-              if (fetchBooks) bookJson = resps[i++];
-              if (fetchMovies) movieJson = resps[i++];
-              if (fetchAnimes) animeJson = resps[i++];
-
-            const items: CurationItem[] = [];
-
-            if (bookJson.success && bookJson.data?.item) {
-              bookJson.data.item.forEach((b: any) => {
-                if (!existingIsbns.includes(b.isbn13 || b.isbn)) {
+          if (base.type === 'BOOK') {
+            const b = base.originalData || {};
+            const res = await getSimilarBooks(base.contentId, base.genre || null, base.creator || null);
+            if (res.success && res.data) {
+              res.data.forEach((item: any) => {
+                if (!existingIsbns.includes(item.isbn13 || item.isbn)) {
                   items.push({
-                    id: `BOOK_${b.isbn13 || b.isbn}`,
+                    id: `BOOK_${item.isbn13 || item.isbn}`,
                     type: 'BOOK',
-                    title: b.title,
-                    creator: b.author,
-                    posterUrl: b.cover,
-                    originalData: b
+                    title: item.title,
+                    creator: item.author,
+                    posterUrl: item.cover,
+                    originalData: item
                   });
                 }
               });
             }
-
-            if (movieJson.success && movieJson.data?.results) {
-              movieJson.data.results.slice(0, 15).forEach((m: any) => {
+          } else if (base.type === 'MOVIE') {
+            const res = await getSimilarMovies(base.contentId);
+            if (res.success && res.data) {
+              res.data.forEach((m: any) => {
                 if (!existingTmdbIds.includes(String(m.id))) {
                   items.push({
                     id: `MOVIE_${m.id}`,
@@ -100,10 +85,10 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
                 }
               });
             }
-
-            const animeMedia = animeJson.data?.data?.Page?.media || [];
-            if (animeJson.success && animeMedia.length > 0) {
-              animeMedia.slice(0, 15).forEach((a: any) => {
+          } else if (base.type === 'ANIME') {
+            const res = await getSimilarAnimes(base.contentId);
+            if (res.success && res.data) {
+              res.data.forEach((a: any) => {
                 if (!existingAnilistIds.includes(String(a.id))) {
                   items.push({
                     id: `ANIME_${a.id}`,
@@ -116,14 +101,14 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
                 }
               });
             }
-
-            // 필터가 있으면 필터링 후 최대 15개 노출 (한 라인을 가득 채우도록)
-            const filteredItems = filterType ? items.filter(i => i.type === filterType) : items;
-            newRecs[tag] = filteredItems.slice(0, 15);
           }
 
-          setRecommendations(newRecs);
+          if (items.length > 0) {
+            newRecs[base.id] = { title: base.title, items: items.slice(0, 15) };
+          }
         }
+
+        setBaseTitleRecs(newRecs);
       } catch (error) {
         console.error('Curation load error:', error);
       } finally {
@@ -131,8 +116,12 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
       }
     }
 
-    loadCuration();
-  }, [existingIsbns, existingTmdbIds, existingAnilistIds, filterType]);
+    if (baseItems.length > 0) {
+      loadCuration();
+    } else {
+      setIsLoading(false);
+    }
+  }, [existingIsbns, existingTmdbIds, existingAnilistIds, filterType, baseItems]);
 
   const handleAddAndNavigate = async (item: CurationItem) => {
     setAddingId(item.id);
@@ -228,29 +217,28 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
     );
   }
 
-  if (tags.length === 0 || Object.values(recommendations).every(r => r.length === 0)) {
+  if (Object.keys(baseTitleRecs).length === 0) {
     return null; // 추천할 데이터가 없으면 숨김
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '48px' }}>
       
       {/* ── 추천 리스트 ── */}
-      {tags.map((tag) => {
-        const curations = recommendations[tag] || [];
-        if (curations.length === 0) return null;
+      {Object.entries(baseTitleRecs).map(([baseId, { title, items }]) => {
+        if (items.length === 0) return null;
 
         return (
-          <section key={tag} id={`tag-section-${tag}`} style={{ scrollMarginTop: '80px' }}>
-            <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h3 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                <span style={{ color: 'var(--accent)', marginRight: '8px' }}>#</span>
-                {tag}
+          <section key={baseId} style={{ scrollMarginTop: '80px' }}>
+            <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                <span style={{ fontSize: '20px', marginRight: '8px' }}>🍿</span>
+                <span style={{ color: 'var(--accent)' }}>[{title}]</span>을(를) 재밌게 본 당신에게
               </h3>
             </div>
               
               <HorizontalScroll>
-                {curations.map(item => (
+                {items.map(item => (
                   <div
                     key={item.id}
                     style={{

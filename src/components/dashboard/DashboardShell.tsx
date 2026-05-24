@@ -6,7 +6,6 @@ import type { Profile } from '@/types';
 import type { User } from '@supabase/supabase-js';
 import Header from './Header';
 import Sidebar from '@/components/sidebar/Sidebar';
-import RightPanel from '@/components/graph/RightPanel';
 import BottomNavigation from '@/components/mobile/BottomNavigation';
 
 interface DashboardShellProps {
@@ -45,11 +44,6 @@ export default function DashboardShell({
           }}
         >
           {children}
-        </div>
-
-        {/* ZONE 4: 우측 패널 */}
-        <div className="zone-right">
-          <RightPanel />
         </div>
       </div>
 

@@ -259,11 +259,11 @@ body {
 
 .dashboard-shell {
   display: grid;
-  grid-template-columns: var(--sidebar-width) 1fr var(--right-panel-width);
+  grid-template-columns: var(--sidebar-width) 1fr;
   grid-template-rows: var(--header-height) 1fr;
   grid-template-areas:
-    "header header header"
-    "sidebar main right";
+    "header header"
+    "sidebar main";
   min-height: 100vh;
   gap: 0;
 }
@@ -271,7 +271,6 @@ body {
 .zone-header { grid-area: header; }
 .zone-sidebar { grid-area: sidebar; }
 .zone-main { grid-area: main; }
-.zone-right { grid-area: right; }
 
 /* ── 반응형: 태블릿 (1024px 미만) ── */
 @media (max-width: 1023px) {

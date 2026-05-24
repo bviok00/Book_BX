@@ -1,6 +1,6 @@
 'use server';
 // 애니메이션 전용 Server Actions (도서/영화와 분리)
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import type { ActionResponse, AnimeStatus } from '@/types';
 
@@ -77,6 +77,7 @@ export async function addAnimeToLibrary(
     }
 
     revalidatePath('/dashboard');
+    revalidateTag('recommendations');
     return { success: true, message: '서재에 성공적으로 추가되었습니다.', data: newUserAnime.id };
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : '알 수 없는 오류';
@@ -199,6 +200,7 @@ export async function updateAnimeStatus(userAnimeId: string, status: AnimeStatus
     if (error) return { success: false, message: `상태 업데이트 실패: ${error.message}` };
 
     revalidatePath('/dashboard');
+    revalidateTag('recommendations');
     return { success: true, message: '상태가 업데이트되었습니다.' };
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : '알 수 없는 오류';
@@ -283,6 +285,7 @@ export async function removeAnimeFromLibrary(userAnimeId: string): Promise<Actio
     if (error) return { success: false, message: `삭제 실패: ${error.message}` };
 
     revalidatePath('/dashboard');
+    revalidateTag('recommendations');
     return { success: true, message: '서재에서 삭제되었습니다.' };
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : '알 수 없는 오류';

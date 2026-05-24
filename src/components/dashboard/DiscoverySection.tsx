@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { addBookToLibrary } from '@/app/dashboard/actions';
 import { addMovieToLibrary } from '@/app/dashboard/movie-actions';
 import { useToast } from '@/components/ui/Toast';
 import Button from '@/components/ui/Button';
 import HorizontalScroll from '@/components/ui/HorizontalScroll';
+import { SkeletonCard } from '@/components/ui/SkeletonCard';
 import { TMDB_IMAGE_BASE, TMDB_POSTER_SIZE } from '@/types/tmdb';
 import type { ContentItem } from '@/types';
 
@@ -32,17 +33,16 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
   const [globalRecs, setGlobalRecs] = useState<{ title: string, emoji: string, items: CurationItem[] }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [previewItem, setPreviewItem] = useState<CurationItem | null>(null);
-  const [addingId, setAddingId] = useState<string | null>(null);
   const [localAddedIds, setLocalAddedIds] = useState<Set<string>>(new Set());
   const { showToast } = useToast();
   const router = useRouter();
-  const hasLoadedRef = useRef(false);
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     async function loadCuration() {
-      if (hasLoadedRef.current) return;
-      setIsLoading(true);
-      hasLoadedRef.current = true;
+      if (Object.keys(baseTitleRecs).length === 0 && globalRecs.length === 0) {
+        setIsLoading(true);
+      }
       try {
         const { 
           getSimilarMovies, 
@@ -122,8 +122,7 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
           }
         }
 
-        setBaseTitleRecs(newRecs);
-
+        // Base recs will be set at the end in startTransition
         // 2. 글로벌 큐레이션 리스트 (베스트셀러, 실시간 인기 순위 등) 추가
         const loadedGlobal: { title: string, emoji: string, items: CurationItem[] }[] = [];
 
@@ -261,11 +260,16 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
           }
         }
 
-        setGlobalRecs(loadedGlobal);
+        startTransition(() => {
+          setBaseTitleRecs(newRecs);
+          setGlobalRecs(loadedGlobal);
+          setIsLoading(false);
+        });
       } catch (error) {
         console.error('Curation load error:', error);
-      } finally {
-        setIsLoading(false);
+        startTransition(() => {
+          setIsLoading(false);
+        });
       }
     }
 
@@ -278,27 +282,24 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
   }, [filterType, baseItems]);
 
   const handleAddAndNavigate = async (item: CurationItem) => {
-    setAddingId(item.id);
+    // 낙관적 업데이트: 응답을 기다리지 않고 즉시 UI 변경
+    setLocalAddedIds(prev => new Set(prev).add(item.id));
+    
     try {
+      let result;
       if (item.type === 'BOOK') {
         const b = item.originalData;
-        const result = await addBookToLibrary(b.isbn13, {
+        result = await addBookToLibrary(b.isbn13, {
           title: b.title,
           author: b.author,
           publisher: b.publisher,
           cover_url: b.cover,
           category: b.categoryName
         });
-        if (result.success && result.data) {
-          showToast(result.message, 'success');
-          setLocalAddedIds(prev => new Set(prev).add(item.id));
-        } else {
-          showToast(result.message, 'error');
-        }
       } else if (item.type === 'MOVIE') {
         const m = item.originalData;
         const { addMovieToLibrary } = await import('@/app/dashboard/movie-actions');
-        const result = await addMovieToLibrary(m.id, {
+        result = await addMovieToLibrary(m.id, {
           title: m.title,
           original_title: m.original_title,
           director: null,
@@ -310,16 +311,10 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
           overview: m.overview,
           metadata: { vote_average: m.vote_average }
         });
-        if (result.success && result.data) {
-          showToast(result.message, 'success');
-          setLocalAddedIds(prev => new Set(prev).add(item.id));
-        } else {
-          showToast(result.message, 'error');
-        }
       } else if (item.type === 'ANIME') {
         const a = item.originalData;
         const { addAnimeToLibrary } = await import('@/app/dashboard/anime-actions');
-        const result = await addAnimeToLibrary(a.id, {
+        result = await addAnimeToLibrary(a.id, {
           title: a.title?.romaji || a.title?.english || a.title?.native || 'Unknown',
           original_title: a.title?.native,
           director: null,
@@ -331,17 +326,28 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
           overview: a.description,
           metadata: { episodes: a.episodes, averageScore: a.averageScore }
         });
-        if (result.success && result.data) {
-          showToast(result.message, 'success');
-          setLocalAddedIds(prev => new Set(prev).add(item.id));
-        } else {
-          showToast(result.message, 'error');
-        }
+      }
+
+      if (result && !result.success) {
+        // 실패 시 롤백
+        setLocalAddedIds(prev => {
+          const next = new Set(prev);
+          next.delete(item.id);
+          return next;
+        });
+        showToast(result.message, 'error');
+      } else if (result) {
+        showToast('서재에 추가되었습니다.', 'success');
       }
     } catch (e) {
+      // 오류 시 롤백
+      setLocalAddedIds(prev => {
+        const next = new Set(prev);
+        next.delete(item.id);
+        return next;
+      });
       showToast('추가 중 오류가 발생했습니다.', 'error');
     } finally {
-      setAddingId(null);
       setPreviewItem(null);
     }
   };
@@ -365,8 +371,21 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
 
   if (isLoading) {
     return (
-      <div style={{ padding: '24px', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-lg)', textAlign: 'center', color: 'var(--text-tertiary)' }}>
-        🔭 관심사 기반 콘텐츠를 발굴하는 중...
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '48px' }}>
+        {[1, 2].map((sectionIdx) => (
+          <section key={`skeleton-section-${sectionIdx}`}>
+            <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center' }}>
+              <div className="animate-pulse" style={{ width: '240px', height: '24px', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px' }} />
+            </div>
+            <div style={{ display: 'flex', gap: '16px', overflowX: 'hidden' }}>
+              {[1, 2, 3, 4, 5, 6].map((cardIdx) => (
+                <div key={`skeleton-card-${cardIdx}`} style={{ minWidth: '140px', maxWidth: '140px' }}>
+                  <SkeletonCard />
+                </div>
+              ))}
+            </div>
+          </section>
+        ))}
       </div>
     );
   }
@@ -425,8 +444,7 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
                   <Button
                     size="sm"
                     variant={localAddedIds.has(item.id) ? "primary" : "secondary"}
-                    isLoading={addingId === item.id}
-                    disabled={addingId !== null || localAddedIds.has(item.id)}
+                    disabled={localAddedIds.has(item.id)}
                     onClick={(e) => { e.stopPropagation(); handleAddAndNavigate(item); }}
                     style={{ width: '100%', fontSize: '12px', padding: '4px' }}
                   >
@@ -486,8 +504,7 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
                   <Button
                     size="sm"
                     variant={localAddedIds.has(item.id) ? "primary" : "secondary"}
-                    isLoading={addingId === item.id}
-                    disabled={addingId !== null || localAddedIds.has(item.id)}
+                    disabled={localAddedIds.has(item.id)}
                     onClick={(e) => { e.stopPropagation(); handleAddAndNavigate(item); }}
                     style={{ width: '100%', fontSize: '12px', padding: '4px' }}
                   >

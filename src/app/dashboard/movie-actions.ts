@@ -1,6 +1,6 @@
 'use server';
 // 영화 전용 Server Actions (도서 actions.ts와 분리)
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import type { ActionResponse, MovieStatus } from '@/types';
 
@@ -103,6 +103,7 @@ export async function addMovieToLibrary(
 
     revalidatePath('/dashboard');
     revalidatePath('/profile');
+    revalidateTag('recommendations');
     return { success: true, message: '서재에 영화가 추가되었습니다.', data: newUserMovie?.id };
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : '알 수 없는 오류';
@@ -134,6 +135,7 @@ export async function updateMovieStatus(
     if (error) return { success: false, message: `상태 변경 실패: ${error.message}` };
 
     revalidatePath('/dashboard');
+    revalidateTag('recommendations');
     return { success: true, message: '영화 시청 상태가 변경되었습니다.' };
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : '알 수 없는 오류';
@@ -307,6 +309,7 @@ export async function deleteUserMovie(userMovieId: string): Promise<ActionRespon
 
     revalidatePath('/dashboard');
     revalidatePath('/profile');
+    revalidateTag('recommendations');
     return { success: true, message: '영화관에서 삭제되었습니다.' };
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : '알 수 없는 오류';

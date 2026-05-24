@@ -6,7 +6,10 @@ const ANILIST_API_URL = 'https://graphql.anilist.co';
 
 export async function getSimilarMovies(tmdbId: string) {
   try {
-    const res = await fetch(`https://api.themoviedb.org/3/movie/${tmdbId}/recommendations?api_key=${TMDB_API_KEY}&language=ko-KR&page=1`);
+    const res = await fetch(`https://api.themoviedb.org/3/movie/${tmdbId}/recommendations?api_key=${TMDB_API_KEY}&language=ko-KR&page=1`, {
+      cache: 'force-cache',
+      next: { tags: ['recommendations'] }
+    });
     if (res.ok) {
       const data = await res.json();
       return { success: true, data: data.results || [] };
@@ -44,7 +47,9 @@ export async function getSimilarAnimes(anilistId: string) {
     const res = await fetch(ANILIST_API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({ query, variables: { id: parseInt(anilistId) } })
+      body: JSON.stringify({ query, variables: { id: parseInt(anilistId) } }),
+      cache: 'force-cache',
+      next: { tags: ['recommendations'] }
     });
     if (res.ok) {
       const data = await res.json();
@@ -77,8 +82,10 @@ export async function getSimilarBooks(isbn: string, categoryName: string | null,
         url.searchParams.append('Version', '20131101');
         url.searchParams.append('Sort', 'SalesPoint'); // 판매량 순 정렬
         url.searchParams.append('OptResult', 'ebookList,usedList,reviewList');
-        
-        const res = await fetch(url.toString());
+        const res = await fetch(url.toString(), {
+          cache: 'force-cache',
+          next: { tags: ['recommendations'] }
+        });
         if (res.ok) {
           const data = await res.json();
           if (data.item) {
@@ -106,8 +113,10 @@ export async function getSimilarBooks(isbn: string, categoryName: string | null,
         url.searchParams.append('Version', '20131101');
         url.searchParams.append('Sort', 'SalesPoint'); // 판매량 순 정렬 (이상한 책 방지)
         url.searchParams.append('OptResult', 'ebookList,usedList,reviewList');
-        
-        const res = await fetch(url.toString());
+        const res = await fetch(url.toString(), {
+          cache: 'force-cache',
+          next: { tags: ['recommendations'] }
+        });
         if (res.ok) {
           const data = await res.json();
           if (data.item) {
@@ -145,7 +154,10 @@ export async function getGlobalBooks(queryType: 'Bestseller' | 'ItemNewSpecial')
     url.searchParams.append('Version', '20131101');
     url.searchParams.append('OptResult', 'ebookList,usedList,reviewList');
 
-    const res = await fetch(url.toString());
+    const res = await fetch(url.toString(), {
+      cache: 'force-cache',
+      next: { tags: ['recommendations'] }
+    });
     if (res.ok) {
       const data = await res.json();
       return { success: true, data: data.item || [] };
@@ -158,7 +170,10 @@ export async function getGlobalBooks(queryType: 'Bestseller' | 'ItemNewSpecial')
 
 export async function getGlobalMovies(type: 'popular' | 'top_rated') {
   try {
-    const res = await fetch(`https://api.themoviedb.org/3/movie/${type}?api_key=${TMDB_API_KEY}&language=ko-KR&page=1`);
+    const res = await fetch(`https://api.themoviedb.org/3/movie/${type}?api_key=${TMDB_API_KEY}&language=ko-KR&page=1`, {
+      cache: 'force-cache',
+      next: { tags: ['recommendations'] }
+    });
     if (res.ok) {
       const data = await res.json();
       return { success: true, data: data.results || [] };
@@ -192,7 +207,9 @@ export async function getGlobalAnimes(sortType: 'POPULARITY_DESC' | 'SCORE_DESC'
     const res = await fetch(ANILIST_API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({ query, variables: { sort: [sortType] } })
+      body: JSON.stringify({ query, variables: { sort: [sortType] } }),
+      cache: 'force-cache',
+      next: { tags: ['recommendations'] }
     });
     if (res.ok) {
       const data = await res.json();

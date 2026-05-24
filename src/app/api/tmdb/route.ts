@@ -31,7 +31,7 @@ export async function GET(request: Request) {
 
     let discoverResults: any[] = [];
     try {
-      const keywordRes = await fetch(keywordUrl.toString());
+      const keywordRes = await fetch(keywordUrl.toString(), { cache: 'force-cache', next: { tags: ['search', 'recommendations'] } });
       const keywordData = await keywordRes.json();
       if (keywordData.results && keywordData.results.length > 0) {
         const keywordId = keywordData.results[0].id;
@@ -40,7 +40,7 @@ export async function GET(request: Request) {
         discoverUrl.searchParams.append('with_keywords', String(keywordId));
         discoverUrl.searchParams.append('language', 'ko-KR');
         discoverUrl.searchParams.append('sort_by', 'popularity.desc');
-        const discoverRes = await fetch(discoverUrl.toString());
+        const discoverRes = await fetch(discoverUrl.toString(), { cache: 'force-cache', next: { tags: ['search', 'recommendations'] } });
         const discoverJson = await discoverRes.json();
         if (discoverJson.results) {
           discoverResults = discoverJson.results;
@@ -58,7 +58,7 @@ export async function GET(request: Request) {
     searchUrl.searchParams.append('page', page);
     searchUrl.searchParams.append('include_adult', 'false');
 
-    const searchRes = await fetch(searchUrl.toString());
+    const searchRes = await fetch(searchUrl.toString(), { cache: 'force-cache', next: { tags: ['search', 'recommendations'] } });
     
     if (!searchRes.ok) {
       throw new Error(`TMDB API 응답 오류: ${searchRes.status}`);

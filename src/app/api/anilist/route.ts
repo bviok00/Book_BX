@@ -70,7 +70,9 @@ export async function GET(request: Request) {
       body: JSON.stringify({
         query: graphqlQuery,
         variables
-      })
+      }),
+      cache: 'force-cache',
+      next: { tags: ['search', 'recommendations'] }
     });
 
     if (!res.ok) {

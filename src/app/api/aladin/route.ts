@@ -37,7 +37,7 @@ export async function GET(request: Request) {
     // ISBN13을 ItemIdType으로 지정해야 cover_url 등에서 고품질 커버 확보 용이
     url.searchParams.append('OptResult', 'ebookList,usedList,reviewList');
 
-    const response = await fetch(url.toString());
+    const response = await fetch(url.toString(), { cache: 'force-cache', next: { tags: ['search', 'recommendations'] } });
     
     if (!response.ok) {
       throw new Error(`알라딘 API 응답 오류: ${response.status}`);

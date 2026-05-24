@@ -1,7 +1,7 @@
 'use server';
 // 대시보드 Server Actions — 폴더 CRUD, 도서 CRUD, 독서 세션 기록
 // 표준 응답 패턴: { success, message, data? }
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import type { ActionResponse, BookStatus } from '@/types';
 
@@ -70,6 +70,7 @@ export async function updateBookStatus(
 
     revalidatePath('/dashboard');
     revalidatePath('/profile');
+    revalidateTag('recommendations');
     return { success: true, message: '독서 상태가 변경되었습니다.' };
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : '알 수 없는 오류';
@@ -173,6 +174,7 @@ export async function addBookToLibrary(
 
     revalidatePath('/dashboard');
     revalidatePath('/profile');
+    revalidateTag('recommendations');
     return { success: true, message: '서재에 추가되었습니다.', data: newUserBook?.id };
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : '알 수 없는 오류';
@@ -554,6 +556,7 @@ export async function deleteUserBook(userBookId: string): Promise<ActionResponse
 
     revalidatePath('/dashboard');
     revalidatePath('/profile');
+    revalidateTag('recommendations');
     return { success: true, message: '서재에서 삭제되었습니다.' };
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : '알 수 없는 오류';

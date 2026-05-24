@@ -148,5 +148,8 @@
 - [x] `recharts`를 활용한 차트 컴포넌트(`InsightDashboard.tsx`) 시각화 구현
 - [x] 미디어별 비중(파이), 상태별 진행도(도넛), 평점 분포(막대) 차트 제공
 
-### Phase 8: UX 개선 및 최적화 (진행 중)
-- [x] 추천 발굴(Discovery) 섹션: 관심작 위시리스트 추가 시 전체 리스트 새로고침 방지 (낙관적 업데이트 및 로컬 상태 유지)
+### Phase 8: 상용 서비스 수준 UX 최적화 (완료)
+- [x] 추천 발굴(Discovery) 섹션: 관심작 위시리스트 추가 시 깜빡임 없는 Background Update 적용 (React `useTransition`)
+- [x] 외부 API(알라딘, TMDB, AniList) 추천 캐싱: `force-cache` 및 On-Demand Revalidation(`revalidateTag`) 적용
+- [x] 스켈레톤 UI 컴포넌트(`SkeletonCard.tsx`) 생성 및 대시보드 로딩 상태(`loading.tsx`)에 적용
+- [x] 갤러리/추천 카드: 위시리스트 추가 시 DB 응답 전 즉각 UI가 반영되는 낙관적 업데이트(Optimistic Update) 적용

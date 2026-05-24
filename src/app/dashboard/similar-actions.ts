@@ -131,3 +131,76 @@ export async function getSimilarBooks(isbn: string, categoryName: string | null,
   
   return { success: false, data: [] };
 }
+
+export async function getGlobalBooks(queryType: 'Bestseller' | 'ItemNewSpecial') {
+  if (!ALADIN_TTB_KEY) return { success: false, data: [] };
+  try {
+    const url = new URL('http://www.aladin.co.kr/ttb/api/ItemList.aspx');
+    url.searchParams.append('ttbkey', ALADIN_TTB_KEY);
+    url.searchParams.append('QueryType', queryType);
+    url.searchParams.append('MaxResults', '15');
+    url.searchParams.append('start', '1');
+    url.searchParams.append('SearchTarget', 'Book');
+    url.searchParams.append('output', 'js');
+    url.searchParams.append('Version', '20131101');
+    url.searchParams.append('OptResult', 'ebookList,usedList,reviewList');
+
+    const res = await fetch(url.toString());
+    if (res.ok) {
+      const data = await res.json();
+      return { success: true, data: data.item || [] };
+    }
+  } catch (error) {
+    console.error(`getGlobalBooks ${queryType} error:`, error);
+  }
+  return { success: false, data: [] };
+}
+
+export async function getGlobalMovies(type: 'popular' | 'top_rated') {
+  try {
+    const res = await fetch(`https://api.themoviedb.org/3/movie/${type}?api_key=${TMDB_API_KEY}&language=ko-KR&page=1`);
+    if (res.ok) {
+      const data = await res.json();
+      return { success: true, data: data.results || [] };
+    }
+  } catch (error) {
+    console.error(`getGlobalMovies ${type} error:`, error);
+  }
+  return { success: false, data: [] };
+}
+
+export async function getGlobalAnimes(sortType: 'POPULARITY_DESC' | 'SCORE_DESC') {
+  try {
+    const query = `
+      query ($sort: [MediaSort]) {
+        Page(page: 1, perPage: 15) {
+          media(type: ANIME, sort: $sort) {
+            id
+            title { romaji english native }
+            coverImage { large extraLarge }
+            bannerImage
+            genres
+            startDate { year month day }
+            duration
+            description
+            averageScore
+            episodes
+          }
+        }
+      }
+    `;
+    const res = await fetch(ANILIST_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ query, variables: { sort: [sortType] } })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return { success: true, data: data.data?.Page?.media || [] };
+    }
+  } catch (error) {
+    console.error(`getGlobalAnimes ${sortType} error:`, error);
+  }
+  return { success: false, data: [] };
+}
+

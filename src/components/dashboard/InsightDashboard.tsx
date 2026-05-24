@@ -166,25 +166,61 @@ export default function InsightDashboard({ books, movies, animes }: InsightDashb
       
       {/* ── 1. 스토리텔링 요약 섹션 ── */}
       <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
-        <div className="glass-card" style={{ padding: '32px 24px', textAlign: 'center', background: 'linear-gradient(145deg, rgba(99,102,241,0.05) 0%, transparent 100%)', border: '1px solid var(--border-subtle)' }}>
-          <div style={{ fontSize: '36px', marginBottom: '12px' }}>🌌</div>
-          <h3 style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '8px', letterSpacing: '0.5px' }}>당신의 우주에는 현재</h3>
-          <p style={{ fontSize: '32px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>총 {totalContents}개의 별<span style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text-secondary)' }}>이 빛납니다</span></p>
+        <div style={{ 
+          padding: '36px 24px', textAlign: 'center', 
+          background: 'linear-gradient(145deg, rgba(99,102,241,0.15) 0%, rgba(99,102,241,0.02) 100%)', 
+          backdropFilter: 'blur(16px)',
+          border: '1px solid rgba(99,102,241,0.2)', 
+          boxShadow: '0 8px 32px rgba(99,102,241,0.1)',
+          borderRadius: '24px',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          <div style={{ position: 'absolute', top: '-20px', right: '-20px', fontSize: '120px', opacity: 0.05, transform: 'rotate(15deg)' }}>🌌</div>
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ fontSize: '40px', marginBottom: '16px', filter: 'drop-shadow(0 0 8px rgba(99,102,241,0.5))' }}>🌌</div>
+            <h3 style={{ fontSize: '15px', color: 'var(--text-secondary)', marginBottom: '8px', letterSpacing: '0.5px', fontWeight: 600 }}>당신의 우주에는 현재</h3>
+            <p style={{ fontSize: '36px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>총 {totalContents}개의 별<span style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text-secondary)' }}>이 빛납니다</span></p>
+          </div>
         </div>
         
-        <div className="glass-card" style={{ padding: '32px 24px', textAlign: 'center', background: 'linear-gradient(145deg, rgba(241,91,181,0.05) 0%, transparent 100%)', border: '1px solid var(--border-subtle)' }}>
-          <div style={{ fontSize: '36px', marginBottom: '12px' }}>✨</div>
-          <h3 style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '8px', letterSpacing: '0.5px' }}>가장 많이 탐험한 은하계</h3>
-          <p style={{ fontSize: '32px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
-            {topGenreInfo ? `#${topGenreInfo.name}` : '기록 없음'}
-            {topGenreInfo && <span style={{ fontSize: '16px', fontWeight: 500, color: 'var(--text-secondary)', marginLeft: '8px' }}>({topGenreInfo.count}작품)</span>}
-          </p>
+        <div style={{ 
+          padding: '36px 24px', textAlign: 'center', 
+          background: 'linear-gradient(145deg, rgba(241,91,181,0.15) 0%, rgba(241,91,181,0.02) 100%)', 
+          backdropFilter: 'blur(16px)',
+          border: '1px solid rgba(241,91,181,0.2)', 
+          boxShadow: '0 8px 32px rgba(241,91,181,0.1)',
+          borderRadius: '24px',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          <div style={{ position: 'absolute', top: '-20px', right: '-20px', fontSize: '120px', opacity: 0.05, transform: 'rotate(-10deg)' }}>✨</div>
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ fontSize: '40px', marginBottom: '16px', filter: 'drop-shadow(0 0 8px rgba(241,91,181,0.5))' }}>✨</div>
+            <h3 style={{ fontSize: '15px', color: 'var(--text-secondary)', marginBottom: '8px', letterSpacing: '0.5px', fontWeight: 600 }}>가장 많이 탐험한 은하계</h3>
+            <p style={{ fontSize: '36px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
+              {topGenreInfo ? `#${topGenreInfo.name}` : '기록 없음'}
+              {topGenreInfo && <span style={{ fontSize: '16px', fontWeight: 500, color: 'var(--text-secondary)', marginLeft: '8px' }}>({topGenreInfo.count}작품)</span>}
+            </p>
+          </div>
         </div>
 
-        <div className="glass-card" style={{ padding: '32px 24px', textAlign: 'center', background: 'linear-gradient(145deg, rgba(0,187,249,0.05) 0%, transparent 100%)', border: '1px solid var(--border-subtle)' }}>
-          <div style={{ fontSize: '36px', marginBottom: '12px' }}>⏱️</div>
-          <h3 style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '8px', letterSpacing: '0.5px' }}>영상 미디어와 함께한 시간</h3>
-          <p style={{ fontSize: '32px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>총 {totalHours}시간<span style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text-secondary)' }}>의 여정</span></p>
+        <div style={{ 
+          padding: '36px 24px', textAlign: 'center', 
+          background: 'linear-gradient(145deg, rgba(0,187,249,0.15) 0%, rgba(0,187,249,0.02) 100%)', 
+          backdropFilter: 'blur(16px)',
+          border: '1px solid rgba(0,187,249,0.2)', 
+          boxShadow: '0 8px 32px rgba(0,187,249,0.1)',
+          borderRadius: '24px',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          <div style={{ position: 'absolute', top: '-20px', right: '-20px', fontSize: '120px', opacity: 0.05, transform: 'rotate(5deg)' }}>⏱️</div>
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ fontSize: '40px', marginBottom: '16px', filter: 'drop-shadow(0 0 8px rgba(0,187,249,0.5))' }}>⏱️</div>
+            <h3 style={{ fontSize: '15px', color: 'var(--text-secondary)', marginBottom: '8px', letterSpacing: '0.5px', fontWeight: 600 }}>영상 미디어와 함께한 시간</h3>
+            <p style={{ fontSize: '36px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>총 {totalHours}시간<span style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text-secondary)' }}>의 여정</span></p>
+          </div>
         </div>
       </section>
 

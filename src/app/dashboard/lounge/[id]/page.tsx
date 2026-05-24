@@ -4,6 +4,7 @@ import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import LoungePostActions from '@/components/library/LoungePostActions';
+import LoungeDetailLikeBtn from '@/components/lounge/LoungeDetailLikeBtn';
 import { createClient } from '@/lib/supabase/server';
 
 export default async function LoungeDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -84,6 +85,15 @@ export default async function LoungeDetailPage({ params }: { params: Promise<{ i
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
             {post.content}
           </ReactMarkdown>
+        </div>
+
+        {/* 하단 좋아요 버튼 */}
+        <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'center' }}>
+          <LoungeDetailLikeBtn 
+            postId={post.id} 
+            initialLiked={post.isLikedByMe || false} 
+            initialCount={post.likesCount || 0} 
+          />
         </div>
       </div>
     </div>

@@ -41,10 +41,11 @@ export async function createLoungePost(data: {
 export async function getLoungePosts(limit = 20): Promise<ActionResponse<any[]>> {
   try {
     const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
     
     const { data: posts, error } = await supabase
       .from('lounge_posts')
-      .select('*')
+      .select('*, lounge_likes(user_id)')
       .order('created_at', { ascending: false })
       .limit(limit);
 
@@ -66,7 +67,9 @@ export async function getLoungePosts(limit = 20): Promise<ActionResponse<any[]>>
 
     const postsWithProfiles = posts.map(post => ({
       ...post,
-      profiles: profileMap.get(post.user_id) || null
+      profiles: profileMap.get(post.user_id) || null,
+      likesCount: post.lounge_likes?.length || 0,
+      isLikedByMe: user ? post.lounge_likes?.some((l: any) => l.user_id === user.id) : false
     }));
 
     return { success: true, message: '조회 완료', data: postsWithProfiles };
@@ -79,10 +82,11 @@ export async function getLoungePost(id: string): Promise<ActionResponse<any>> {
   try {
     console.log('[DEBUG] getLoungePost called with id:', id);
     const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
     
     const { data: post, error } = await supabase
       .from('lounge_posts')
-      .select('*')
+      .select('*, lounge_likes(user_id)')
       .eq('id', id)
       .maybeSingle();
 
@@ -100,6 +104,8 @@ export async function getLoungePost(id: string): Promise<ActionResponse<any>> {
       .single();
 
     post.profiles = profile || null;
+    post.likesCount = post.lounge_likes?.length || 0;
+    post.isLikedByMe = user ? post.lounge_likes?.some((l: any) => l.user_id === user.id) : false;
 
     return { success: true, message: '조회 완료', data: post };
   } catch (error: any) {
@@ -215,5 +221,34 @@ export async function updateLoungePost(
     return { success: true, message: '게시글이 수정되었습니다.', data: id };
   } catch (error: any) {
     return { success: false, message: error.message || '수정에 실패했습니다.' };
+  }
+}
+
+export async function toggleLoungeLike(postId: string): Promise<ActionResponse<{ isLiked: boolean; countDelta: number }>> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, message: '인증이 필요합니다.' };
+
+    const { data: existing } = await supabase
+      .from('lounge_likes')
+      .select('id')
+      .eq('post_id', postId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase.from('lounge_likes').delete().eq('id', existing.id);
+      revalidatePath('/dashboard/lounge');
+      revalidatePath(`/dashboard/lounge/${postId}`);
+      return { success: true, message: '좋아요 취소', data: { isLiked: false, countDelta: -1 } };
+    } else {
+      await supabase.from('lounge_likes').insert({ post_id: postId, user_id: user.id });
+      revalidatePath('/dashboard/lounge');
+      revalidatePath(`/dashboard/lounge/${postId}`);
+      return { success: true, message: '좋아요 추가', data: { isLiked: true, countDelta: 1 } };
+    }
+  } catch (error: any) {
+    return { success: false, message: error.message || '오류가 발생했습니다.' };
   }
 }

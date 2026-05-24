@@ -29,6 +29,7 @@ interface CurationItem {
 
 export default function DiscoverySection({ existingIsbns, existingTmdbIds, existingAnilistIds = [], filterType, baseItems = [] }: DiscoverySectionProps) {
   const [baseTitleRecs, setBaseTitleRecs] = useState<Record<string, { title: string, items: CurationItem[] }>>({});
+  const [globalRecs, setGlobalRecs] = useState<{ title: string, emoji: string, items: CurationItem[] }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [previewItem, setPreviewItem] = useState<CurationItem | null>(null);
   const [addingId, setAddingId] = useState<string | null>(null);
@@ -39,14 +40,23 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
     async function loadCuration() {
       setIsLoading(true);
       try {
-        const { getSimilarMovies, getSimilarAnimes, getSimilarBooks } = await import('@/app/dashboard/similar-actions');
+        const { 
+          getSimilarMovies, 
+          getSimilarAnimes, 
+          getSimilarBooks,
+          getGlobalBooks,
+          getGlobalMovies,
+          getGlobalAnimes 
+        } = await import('@/app/dashboard/similar-actions');
         
-        // 4점 이상인 작품들만 후보로 선정 (없으면 전체에서 선정)
-        let candidates = baseItems.filter(item => item.rating && item.rating >= 4);
-        if (candidates.length === 0) candidates = baseItems;
+        // 1. 선호도 기반 후보 추출 (평점 4점 이상 우선, 부족하면 최근 다른 작품들로 충당하여 최소 3개)
+        const highRated = baseItems.filter(item => item.rating && item.rating >= 4);
+        const remaining = baseItems.filter(item => !(item.rating && item.rating >= 4));
         
-        // 무작위로 최대 3개 추출
-        const randomBases = [...candidates].sort(() => 0.5 - Math.random()).slice(0, 3);
+        const shuffledHigh = [...highRated].sort(() => 0.5 - Math.random());
+        const shuffledRemaining = [...remaining].sort(() => 0.5 - Math.random());
+        
+        const randomBases = [...shuffledHigh, ...shuffledRemaining].slice(0, 3);
         
         const newRecs: Record<string, { title: string, items: CurationItem[] }> = {};
 
@@ -109,6 +119,145 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
         }
 
         setBaseTitleRecs(newRecs);
+
+        // 2. 글로벌 큐레이션 리스트 (베스트셀러, 실시간 인기 순위 등) 추가
+        const loadedGlobal: { title: string, emoji: string, items: CurationItem[] }[] = [];
+
+        if (filterType === 'BOOK') {
+          // 베스트셀러
+          const bestRes = await getGlobalBooks('Bestseller');
+          if (bestRes.success && bestRes.data) {
+            const items = bestRes.data
+              .filter((item: any) => !existingIsbns.includes(item.isbn13 || item.isbn))
+              .map((item: any) => ({
+                id: `BOOK_BEST_${item.isbn13 || item.isbn}`,
+                type: 'BOOK' as const,
+                title: item.title,
+                creator: item.author,
+                posterUrl: item.cover,
+                originalData: item
+              }));
+            if (items.length > 0) {
+              loadedGlobal.push({
+                title: '지금 서점가에서 가장 핫한 베스트셀러',
+                emoji: '🏆',
+                items: items.slice(0, 15)
+              });
+            }
+          }
+
+          // 주목할 만한 신간
+          const newRes = await getGlobalBooks('ItemNewSpecial');
+          if (newRes.success && newRes.data) {
+            const items = newRes.data
+              .filter((item: any) => !existingIsbns.includes(item.isbn13 || item.isbn))
+              .map((item: any) => ({
+                id: `BOOK_NEW_${item.isbn13 || item.isbn}`,
+                type: 'BOOK' as const,
+                title: item.title,
+                creator: item.author,
+                posterUrl: item.cover,
+                originalData: item
+              }));
+            if (items.length > 0) {
+              loadedGlobal.push({
+                title: '독서 애호가들이 주목하는 화제의 신간',
+                emoji: '✨',
+                items: items.slice(0, 15)
+              });
+            }
+          }
+        } else if (filterType === 'MOVIE') {
+          // 인기 영화
+          const popRes = await getGlobalMovies('popular');
+          if (popRes.success && popRes.data) {
+            const items = popRes.data
+              .filter((m: any) => !existingTmdbIds.includes(String(m.id)))
+              .map((m: any) => ({
+                id: `MOVIE_POP_${m.id}`,
+                type: 'MOVIE' as const,
+                title: m.title,
+                creator: m.original_title,
+                posterUrl: m.poster_path ? `${TMDB_IMAGE_BASE}/${TMDB_POSTER_SIZE}${m.poster_path}` : '',
+                originalData: m
+              }));
+            if (items.length > 0) {
+              loadedGlobal.push({
+                title: '지금 트렌디하게 떠오르는 인기 영화',
+                emoji: '🔥',
+                items: items.slice(0, 15)
+              });
+            }
+          }
+
+          // 높은 평점
+          const topRes = await getGlobalMovies('top_rated');
+          if (topRes.success && topRes.data) {
+            const items = topRes.data
+              .filter((m: any) => !existingTmdbIds.includes(String(m.id)))
+              .map((m: any) => ({
+                id: `MOVIE_TOP_${m.id}`,
+                type: 'MOVIE' as const,
+                title: m.title,
+                creator: m.original_title,
+                posterUrl: m.poster_path ? `${TMDB_IMAGE_BASE}/${TMDB_POSTER_SIZE}${m.poster_path}` : '',
+                originalData: m
+              }));
+            if (items.length > 0) {
+              loadedGlobal.push({
+                title: '누구나 인정하는 최고의 명작 영화 컬렉션',
+                emoji: '⭐️',
+                items: items.slice(0, 15)
+              });
+            }
+          }
+        } else if (filterType === 'ANIME') {
+          // 인기 애니
+          const popRes = await getGlobalAnimes('POPULARITY_DESC');
+          if (popRes.success && popRes.data) {
+            const items = popRes.data
+              .filter((a: any) => !existingAnilistIds.includes(String(a.id)))
+              .map((a: any) => ({
+                id: `ANIME_POP_${a.id}`,
+                type: 'ANIME' as const,
+                title: a.title?.romaji || a.title?.english || a.title?.native || 'Unknown',
+                creator: a.title?.native || '',
+                posterUrl: a.coverImage?.large || a.coverImage?.extraLarge || '',
+                originalData: a
+              }));
+            if (items.length > 0) {
+              loadedGlobal.push({
+                title: '이번 시즌 가장 핫한 인기 애니메이션',
+                emoji: '⚡️',
+                items: items.slice(0, 15)
+              });
+            }
+          }
+
+          // 명작 애니
+          const topRes = await getGlobalAnimes('SCORE_DESC');
+          if (topRes.success && topRes.data) {
+            const items = topRes.data
+              .filter((a: any) => !existingAnilistIds.includes(String(a.id)))
+              .map((a: any) => ({
+                id: `ANIME_TOP_${a.id}`,
+                type: 'ANIME' as const,
+                title: a.title?.romaji || a.title?.english || a.title?.native || 'Unknown',
+                creator: a.title?.native || '',
+                posterUrl: a.coverImage?.large || a.coverImage?.extraLarge || '',
+                originalData: a
+              }));
+            if (items.length > 0) {
+              loadedGlobal.push({
+                title: '마니아들이 극찬한 최고의 평점 명작 애니',
+                emoji: '🌟',
+                items: items.slice(0, 15)
+              });
+            }
+          }
+        }
+
+        setGlobalRecs(loadedGlobal);
       } catch (error) {
         console.error('Curation load error:', error);
       } finally {
@@ -116,7 +265,7 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
       }
     }
 
-    if (baseItems.length > 0) {
+    if (baseItems.length > 0 || filterType) {
       loadCuration();
     } else {
       setIsLoading(false);
@@ -137,7 +286,6 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
         });
         if (result.success && result.data) {
           showToast(result.message, 'success');
-          router.push(`/dashboard?tab=BOOK&bookStatus=WANT_TO_READ`);
         } else {
           showToast(result.message, 'error');
         }
@@ -158,7 +306,6 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
         });
         if (result.success && result.data) {
           showToast(result.message, 'success');
-          router.push(`/dashboard?tab=MOVIE&movieStatus=WANT_TO_WATCH`);
         } else {
           showToast(result.message, 'error');
         }
@@ -179,7 +326,6 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
         });
         if (result.success && result.data) {
           showToast(result.message, 'success');
-          router.push(`/dashboard?tab=ANIME&animeStatus=WANT_TO_WATCH`);
         } else {
           showToast(result.message, 'error');
         }
@@ -217,14 +363,75 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
     );
   }
 
-  if (Object.keys(baseTitleRecs).length === 0) {
+  if (Object.keys(baseTitleRecs).length === 0 && globalRecs.length === 0) {
     return null; // 추천할 데이터가 없으면 숨김
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '48px' }}>
       
-      {/* ── 추천 리스트 ── */}
+      {/* ── 글로벌 큐레이션 리스트 ── */}
+      {globalRecs.map((section, idx) => {
+        if (section.items.length === 0) return null;
+
+        return (
+          <section key={`global-${idx}`} style={{ scrollMarginTop: '80px' }}>
+            <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                <span style={{ fontSize: '20px', marginRight: '8px' }}>{section.emoji}</span>
+                {section.title}
+              </h3>
+            </div>
+              
+            <HorizontalScroll>
+              {section.items.map(item => (
+                <div
+                  key={item.id}
+                  style={{
+                    minWidth: '140px',
+                    maxWidth: '140px',
+                    flexShrink: 0,
+                    scrollSnapAlign: 'start',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => handleCardClick(item)}
+                  className="card-glow"
+                >
+                  <div style={{ position: 'relative', aspectRatio: '2/3', borderRadius: 'var(--radius-md)', overflow: 'hidden', backgroundColor: 'var(--bg-card)' }}>
+                    {item.posterUrl ? (
+                      <img src={item.posterUrl} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-tertiary)' }}>No Image</div>
+                    )}
+                    <div style={{ position: 'absolute', top: '8px', left: '8px', backgroundColor: 'rgba(0,0,0,0.6)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', color: '#fff', fontWeight: 600 }}>
+                      {item.type === 'BOOK' ? '도서' : item.type === 'MOVIE' ? '영화' : '애니'}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="line-clamp-1" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{item.title}</p>
+                    <p className="line-clamp-1" style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{item.creator}</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    isLoading={addingId === item.id}
+                    disabled={addingId !== null}
+                    onClick={(e) => { e.stopPropagation(); handleAddAndNavigate(item); }}
+                    style={{ width: '100%', fontSize: '12px', padding: '4px' }}
+                  >
+                    + 위시리스트 추가
+                  </Button>
+                </div>
+              ))}
+            </HorizontalScroll>
+          </section>
+        );
+      })}
+
+      {/* ── 개인화 추천 리스트 ── */}
       {Object.entries(baseTitleRecs).map(([baseId, { title, items }]) => {
         if (items.length === 0) return null;
 
@@ -237,53 +444,54 @@ export default function DiscoverySection({ existingIsbns, existingTmdbIds, exist
               </h3>
             </div>
               
-              <HorizontalScroll>
-                {items.map(item => (
-                  <div
-                    key={item.id}
-                    style={{
-                      minWidth: '140px',
-                      maxWidth: '140px',
-                      flexShrink: 0,
-                      scrollSnapAlign: 'start',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '8px',
-                      cursor: 'pointer'
-                    }}
-                    onClick={() => handleCardClick(item)}
-                    className="card-glow"
-                  >
-                    <div style={{ position: 'relative', aspectRatio: '2/3', borderRadius: 'var(--radius-md)', overflow: 'hidden', backgroundColor: 'var(--bg-card)' }}>
-                      {item.posterUrl ? (
-                        <img src={item.posterUrl} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : (
-                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-tertiary)' }}>No Image</div>
-                      )}
-                      <div style={{ position: 'absolute', top: '8px', left: '8px', backgroundColor: 'rgba(0,0,0,0.6)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', color: '#fff', fontWeight: 600 }}>
-                        {item.type === 'BOOK' ? '도서' : item.type === 'MOVIE' ? '영화' : '애니'}
-                      </div>
+            <HorizontalScroll>
+              {items.map(item => (
+                <div
+                  key={item.id}
+                  style={{
+                    minWidth: '140px',
+                    maxWidth: '140px',
+                    flexShrink: 0,
+                    scrollSnapAlign: 'start',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => handleCardClick(item)}
+                  className="card-glow"
+                >
+                  <div style={{ position: 'relative', aspectRatio: '2/3', borderRadius: 'var(--radius-md)', overflow: 'hidden', backgroundColor: 'var(--bg-card)' }}>
+                    {item.posterUrl ? (
+                      <img src={item.posterUrl} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-tertiary)' }}>No Image</div>
+                    )}
+                    <div style={{ position: 'absolute', top: '8px', left: '8px', backgroundColor: 'rgba(0,0,0,0.6)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', color: '#fff', fontWeight: 600 }}>
+                      {item.type === 'BOOK' ? '도서' : item.type === 'MOVIE' ? '영화' : '애니'}
                     </div>
-                    <div>
-                      <p className="line-clamp-1" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{item.title}</p>
-                      <p className="line-clamp-1" style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{item.creator}</p>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      isLoading={addingId === item.id}
-                      disabled={addingId !== null}
-                      onClick={(e) => { e.stopPropagation(); handleAddAndNavigate(item); }}
-                      style={{ width: '100%', fontSize: '12px', padding: '4px' }}
-                    >
-                      + 위시리스트 추가
-                    </Button>
                   </div>
-                ))}
-              </HorizontalScroll>
-            </section>
-          );
-        })}
+                  <div>
+                    <p className="line-clamp-1" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{item.title}</p>
+                    <p className="line-clamp-1" style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{item.creator}</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    isLoading={addingId === item.id}
+                    disabled={addingId !== null}
+                    onClick={(e) => { e.stopPropagation(); handleAddAndNavigate(item); }}
+                    style={{ width: '100%', fontSize: '12px', padding: '4px' }}
+                  >
+                    + 위시리스트 추가
+                  </Button>
+                </div>
+              ))}
+            </HorizontalScroll>
+          </section>
+        );
+      })}
+
 
       {/* Preview Modal */}
       {previewItem && (

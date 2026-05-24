@@ -36,7 +36,6 @@ export default function SimilarRecommendationsClient({ title, items }: SimilarRe
         });
         if (result.success && result.data) {
           showToast(result.message, 'success');
-          router.push(`/dashboard?tab=BOOK&bookStatus=WANT_TO_READ`);
         } else {
           showToast(result.message, 'error');
         }
@@ -56,7 +55,6 @@ export default function SimilarRecommendationsClient({ title, items }: SimilarRe
         });
         if (result.success && result.data) {
           showToast(result.message, 'success');
-          router.push(`/dashboard?tab=MOVIE&movieStatus=WANT_TO_WATCH`);
         } else {
           showToast(result.message, 'error');
         }
@@ -76,7 +74,6 @@ export default function SimilarRecommendationsClient({ title, items }: SimilarRe
         });
         if (result.success && result.data) {
           showToast(result.message, 'success');
-          router.push(`/dashboard?tab=ANIME&animeStatus=WANT_TO_WATCH`);
         } else {
           showToast(result.message, 'error');
         }
